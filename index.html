@@ -43,6 +43,9 @@
       min-width: 320px;
     }
     .brand img{ height:34px; width:auto; display:block; }
+    .brand img[alt="FORMATION"]{ height:46px; }
+    .navplain{ font-weight:900; color:#2f3b4a; cursor:pointer; }
+    .navplain.active{ color: var(--blue); }
     .brand .divider{ width:1px; height:34px; background: rgba(255,255,255,.20); }
 
     /* Subnav */
@@ -308,9 +311,8 @@
   </header>
 
   <nav class="subnav">
-    <div id="navVue" class="navlink active" role="button" tabindex="0">Vue</div>
-    <span class="sep">›</span>
-    <div id="navCreation" class="navlink" role="button" tabindex="0">Création</div>
+    <div id="navVue" class="navplain active" role="button" tabindex="0">Vue></div>
+    <div id="navCreation" class="navplain" role="button" tabindex="0" style="margin-left:8px;">Création ></div>
   </nav>
 
   <div class="app">
@@ -987,6 +989,10 @@
     emptyView.style.display = "none";
     viewPanel.style.display = "block";
 
+    if(viewZoneSelect){
+      viewZoneSelect.value = (selectedZoneIndex !== null) ? String(selectedZoneIndex) : "";
+    }
+
     const agents = zone.agents || [];
     v_zoneName.textContent = zone.name || "(sans nom)";
     v_zoneCount.textContent = agents.length;
@@ -1078,16 +1084,16 @@
   function syncViewZoneSelect(){
     if(!viewZoneSelect) return;
     viewZoneSelect.innerHTML = "";
-    state.zones.forEach((z,i)=>{
+    // sort zones alphabetically by name (locale-aware) but keep original indices as values
+    const sorted = state.zones.map((z,i)=>({ name: String(z.name||""), idx: i }))
+      .sort((a,b)=> a.name.localeCompare(b.name, 'fr', { sensitivity: 'base' }));
+    sorted.forEach(item=>{
       const opt = document.createElement("option");
-      opt.value = String(i);
-      opt.textContent = `${z.name || "(sans nom)"}`;
+      opt.value = String(item.idx);
+      opt.textContent = item.name || "(sans nom)";
       viewZoneSelect.appendChild(opt);
     });
-    if(state.zones.length === 0){
-      viewZoneSelect.value = "";
-      return;
-    }
+    if(state.zones.length === 0){ viewZoneSelect.value = ""; return; }
     if(selectedZoneIndex === null) selectedZoneIndex = 0;
     viewZoneSelect.value = String(selectedZoneIndex);
   }
