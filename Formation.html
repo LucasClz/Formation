@@ -43,6 +43,7 @@
       min-width: 320px;
     }
     .brand img{ height:34px; width:auto; display:block; }
+    .brand img[alt="FORMATION"]{ height:46px; }
     .brand .divider{ width:1px; height:34px; background: rgba(255,255,255,.20); }
 
     /* Subnav */
@@ -74,6 +75,8 @@
       border-color: rgba(11,119,197,.25);
       color: var(--blue);
     }
+    .navplain{ font-weight:900; color:#2f3b4a; cursor:pointer; }
+    .navplain.active{ color: var(--blue); }
 
     /* App */
     .app{
@@ -253,7 +256,7 @@
   </header>
 
   <nav class="subnav">
-    <div class="pill">Mode : <b>Vue</b></div>
+    <div id="navVue" class="navplain active" role="button" tabindex="0">Vue></div>
   </nav>
 
   <div class="app">
@@ -310,9 +313,14 @@
 
       <div id="viewPanel" style="display:none;">
         <div class="card">
-          <div class="title">MES INFORMATIONS</div>
+                <div class="title">MES INFORMATIONS</div>
 
-          <div class="row">
+                <div style="margin-top:8px; margin-bottom:8px;">
+                  <label class="small">Zone</label>
+                  <select id="viewZoneSelect" style="width:100%;"></select>
+                </div>
+
+                <div class="row">
             <div>
               <div class="muted">Nom de la zone</div>
               <div id="v_zoneName" style="font-size:18px; font-weight:900;"></div>
@@ -398,6 +406,7 @@
 
   // Unit filter
   const unitFilter = document.getElementById("unitFilter");
+  const viewZoneSelect = document.getElementById("viewZoneSelect");
 
   /* =========================
      Load Zone.json
@@ -430,7 +439,25 @@
 
     selectedZoneIndex = state.zones.length ? 0 : null;
     renderZones();
+    syncViewZoneSelect();
     updateViewPanel();
+  }
+
+  function syncViewZoneSelect(){
+    if(!viewZoneSelect) return;
+    viewZoneSelect.innerHTML = "";
+    // sort zones alphabetically by name (locale-aware)
+    const sorted = state.zones.map((z,i)=>({ name: String(z.name||""), idx: i }))
+      .sort((a,b)=> a.name.localeCompare(b.name, 'fr', { sensitivity: 'base' }));
+    sorted.forEach(item=>{
+      const opt = document.createElement("option");
+      opt.value = String(item.idx);
+      opt.textContent = item.name || "(sans nom)";
+      viewZoneSelect.appendChild(opt);
+    });
+    if(state.zones.length === 0){ viewZoneSelect.value = ""; return; }
+    if(selectedZoneIndex === null) selectedZoneIndex = 0;
+    viewZoneSelect.value = String(selectedZoneIndex);
   }
 
   /* =========================
@@ -493,6 +520,10 @@
     }
     emptyView.style.display = "none";
     viewPanel.style.display = "block";
+
+    if(viewZoneSelect){
+      viewZoneSelect.value = (selectedZoneIndex !== null) ? String(selectedZoneIndex) : "";
+    }
 
     const agents = zone.agents || [];
     v_zoneName.textContent = zone.name || "(sans nom)";
@@ -580,6 +611,16 @@
   formationSelect.addEventListener("change", updateViewPanel);
   vacationFilter.addEventListener("change", updateViewPanel);
   shiftFilter.addEventListener("change", updateViewPanel);
+
+  if(viewZoneSelect){
+    viewZoneSelect.addEventListener("change", ()=>{
+      const v = viewZoneSelect.value;
+      if(v === "") return;
+      selectedZoneIndex = Number(v);
+      renderZones();
+      updateViewPanel();
+    });
+  }
 
   /* =========================
      Init
