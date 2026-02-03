@@ -187,6 +187,12 @@
     .zonePoly.selected{
       fill: rgba(255,206,86,.25);
       stroke: rgba(255,152,0,.95);
+      animation: zoneHighlight 900ms ease-out;
+    }
+
+    @keyframes zoneHighlight{
+      0%{ stroke-width:6; opacity:0.7; }
+      100%{ stroke-width:2; opacity:1; }
     }
     .vertex{
       fill:#fff;
@@ -669,7 +675,7 @@
     updatePanels();
   });
 
-  unitFilter.addEventListener("change", updatePanels);
+  unitFilter.addEventListener("change", ()=>{ syncViewZoneSelect(); renderZones(); updatePanels(); });
   formationSelect.addEventListener("change", updatePanels);
   vacationFilter.addEventListener("change", updatePanels);
   shiftFilter.addEventListener("change", updatePanels);
@@ -1093,14 +1099,34 @@
     // sort zones alphabetically by name (locale-aware) but keep original indices as values
     const sorted = state.zones.map((z,i)=>({ name: String(z.name||""), idx: i }))
       .sort((a,b)=> a.name.localeCompare(b.name, 'fr', { sensitivity: 'base' }));
-    sorted.forEach(item=>{
+
+    // Apply unit filter: show only zones matching selected unit (or all)
+    const unit = (unitFilter && unitFilter.value) ? unitFilter.value : "ALL";
+    const visible = sorted.filter(item => {
+      if(unit === "ALL") return true;
+      const z = state.zones[item.idx];
+      return z && z.unit && String(z.unit) === String(unit);
+    });
+
+    visible.forEach(item=>{
       const opt = document.createElement("option");
       opt.value = String(item.idx);
       opt.textContent = item.name || "(sans nom)";
       viewZoneSelect.appendChild(opt);
     });
-    if(state.zones.length === 0){ viewZoneSelect.value = ""; return; }
-    if(selectedZoneIndex === null) selectedZoneIndex = 0;
+
+    if(visible.length === 0){
+      viewZoneSelect.value = "";
+      // if no visible zones, clear selection
+      if(selectedZoneIndex !== null) selectedZoneIndex = null;
+      return;
+    }
+
+    // Keep current selection if it's visible, otherwise select first visible
+    const visibleIdxs = visible.map(v=>v.idx);
+    if(selectedZoneIndex === null || !visibleIdxs.includes(selectedZoneIndex)){
+      selectedZoneIndex = visibleIdxs[0];
+    }
     viewZoneSelect.value = String(selectedZoneIndex);
   }
 
