@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Cartographie – Formations</title>
+  <title>Cartographie – Formations (Admin)</title>
 
   <style>
     :root{
@@ -710,9 +710,6 @@
         }
         if(!targetZone) targetZone = zone; // fallback sur zone sélectionnée
 
-        // If agent provides a unit and zone has none, set it
-        if(a.unit && !targetZone.unit) targetZone.unit = a.unit;
-
         targetZone.agents = targetZone.agents || [];
         const existing = targetZone.agents.find(x => (x.name || "").trim().toLowerCase() === key);
         if(existing){
@@ -817,10 +814,6 @@
       const epi  = pick(r, ["EPI"]);
       const ext  = pick(r, ["Extincteur", "Ext"]);
 
-      // Unité (PRM/QSE/MR/SC)
-      const unitRaw = pick(r, ["Unité","Unite","Unit","Unité Opérationnelle","UnitOp","UnitOperation","Departement"]);
-      const unit = String(unitRaw || "").trim() || null;
-
       const trainings = normalizeTrainings({
         "GF-SF": parseOuiNon(gfsf),
         "EPI": parseOuiNon(epi),
@@ -833,7 +826,6 @@
 
       const agent = { name: nameS, shift, vacation, trainings };
       if(zoneName) agent.zoneName = zoneName;
-      if(unit) agent.unit = unit;
       agents.push(agent);
     }
 
@@ -1019,7 +1011,6 @@
       const meta = document.createElement("div");
       meta.className = "metaLine";
       meta.innerHTML = `
-        <span class="metaChip"><b>Unité</b> ${escapeHtml(a.unit || "-")}</span>
         <span class="metaChip"><b>Horaire</b> ${escapeHtml(a.shift || "-")}</span>
         <span class="metaChip"><b>Vacation</b> ${escapeHtml(a.vacation || "-")}</span>
       `;
@@ -1407,11 +1398,8 @@
         }
         if(!targetZone){
           if(state.zones.length) targetZone = state.zones[0];
-          else { targetZone = { name: "Imported", points: "", agents: [] }; state.zones.push(targetZone); }
+          else { targetZone = { name: "Imported", points: "", unit: null, agents: [] }; state.zones.push(targetZone); }
         }
-
-        // propagate unit from agent to zone if present
-        if(a.unit && !targetZone.unit) targetZone.unit = a.unit;
 
         targetZone.agents = targetZone.agents || [];
         const key = (a.name || "").trim().toLowerCase();
