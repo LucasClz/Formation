@@ -439,6 +439,15 @@
 
             <label class="small">Nom de zone</label>
             <input id="zoneNameInput" placeholder="Ex: Atelier A" />
+            
+            <label class="small">Unité Opérationnelle</label>
+            <select id="zoneUnitSelect">
+              <option value="">(Aucune)</option>
+              <option value="PRM">PRM</option>
+              <option value="QSE">QSE</option>
+              <option value="MR">MR</option>
+              <option value="SC">SC</option>
+            </select>
 
             <div class="row">
               <button id="startDrawBtn">Créer / redessiner polygone</button>
@@ -546,6 +555,7 @@
 
   const zoneSelect = document.getElementById("zoneSelect");
   const zoneNameInput = document.getElementById("zoneNameInput");
+  const zoneUnitSelect = document.getElementById("zoneUnitSelect");
   const newZoneBtn = document.getElementById("newZoneBtn");
   const deleteZoneBtn = document.getElementById("deleteZoneBtn");
   const exportJsonBtn = document.getElementById("exportJsonBtn");
@@ -574,9 +584,10 @@
       if (!Array.isArray(zones)) throw new Error("Zone.json doit être un tableau []");
 
       state.zones = zones.map((z, i) => ({
-        id: String(z.id || ("Z" + (i+1))),
+        // keep plain zone object (no internal id), preserve optional unit
         name: String(z.name || "(sans nom)"),
         points: String(z.points || ""),
+        unit: z.unit || null,
         agents: Array.isArray(z.agents) ? z.agents.map(a => ({
           name: String(a.name || ""),
           shift: String(a.shift || ""),
@@ -619,7 +630,7 @@
       stopDrawing(false);
       editLayer.innerHTML = "";
     } else {
-      if(!selectedZoneId && state.zones.length) selectedZoneId = state.zones[0].id;
+      if(selectedZoneIndex === null && state.zones.length) selectedZoneIndex = 0;
       syncZoneSelect();
     }
 
@@ -686,6 +697,9 @@
         }
         if(!targetZone) targetZone = zone; // fallback sur zone sélectionnée
 
+        // If agent provides a unit and zone has none, set it
+        if(a.unit && !targetZone.unit) targetZone.unit = a.unit;
+
         targetZone.agents = targetZone.agents || [];
         const existing = targetZone.agents.find(x => (x.name || "").trim().toLowerCase() === key);
         if(existing){
@@ -724,12 +738,40 @@
 
     const ws = wb.Sheets[sheetName];
 
-    // rows = tableau d'objets basé sur les en-têtes
-    const rows = XLSX.utils.sheet_to_json(ws, {
-      defval: "",   // valeurs vides -> ""
-      raw: false,   // formate (utile si nombres/booleans)
-      blankrows: false
-    });
+    // read first as array to detect header presence
+    const arr = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "", blankrows: false });
+    if(!arr.length) throw new Error("La feuille 1 est vide.");
+
+    const firstRow = arr[0].map ? arr[0].map(c => String(c||"").trim().toLowerCase()) : [];
+    const hasHeader = firstRow.some(h => /nom|agent|horaire|vacation|vacations|gf-sf|epi|extincteur|zone|unité|unit/i.test(h));
+
+    if(hasHeader){
+      // use header-based parsing
+      const rows = XLSX.utils.sheet_to_json(ws, {
+        defval: "",
+        raw: false,
+        blankrows: false
+      });
+      if(!rows.length) throw new Error("La feuille 1 est vide.");
+      return rows;
+    }
+
+    // No header row detected: map columns using expected format
+    // Expected columns: Name, ZoneName, Unit, Shift, Vacation, GF-SF, EPI, Extincteur
+    const rows = [];
+    for(const r of arr){
+      if(!r || r.length === 0) continue;
+      const obj = {};
+      obj["Nom agent"] = r[0] || "";
+      obj["Zone"] = r[1] || "";
+      obj["Unité"] = r[2] || "";
+      obj["Plage horaire"] = r[3] || "";
+      obj["Vacations"] = r[4] || "";
+      obj["GF-SF"] = r[5] || "";
+      obj["EPI"] = r[6] || "";
+      obj["Extincteur"] = r[7] || "";
+      rows.push(obj);
+    }
 
     if(!rows.length) throw new Error("La feuille 1 est vide.");
     return rows;
@@ -762,6 +804,10 @@
       const epi  = pick(r, ["EPI"]);
       const ext  = pick(r, ["Extincteur", "Ext"]);
 
+      // Unité (PRM/QSE/MR/SC)
+      const unitRaw = pick(r, ["Unité","Unite","Unit","Unité Opérationnelle","UnitOp","UnitOperation","Departement"]);
+      const unit = String(unitRaw || "").trim() || null;
+
       const trainings = normalizeTrainings({
         "GF-SF": parseOuiNon(gfsf),
         "EPI": parseOuiNon(epi),
@@ -774,6 +820,7 @@
 
       const agent = { name: nameS, shift, vacation, trainings };
       if(zoneName) agent.zoneName = zoneName;
+      if(unit) agent.unit = unit;
       agents.push(agent);
     }
 
@@ -1016,6 +1063,7 @@
     }
     c_agentsEmpty.style.display = "none";
     zoneNameInput.value = zone.name || "";
+    zoneUnitSelect.value = zone.unit || "";
     renderAgentsEditor(zone);
     updateDrawStateText();
   }
@@ -1034,6 +1082,14 @@
     zone.name = zoneNameInput.value.trim();
     syncZoneSelect();
     renderZones();
+    updatePanels();
+  });
+
+  zoneUnitSelect.addEventListener("change", ()=>{
+    const zone = getSelectedZone();
+    if(!zone) return;
+    const v = zoneUnitSelect.value || null;
+    zone.unit = v;
     updatePanels();
   });
 
@@ -1074,7 +1130,7 @@
 
   /* Drawing */
   startDrawBtn.addEventListener("click", ()=>{
-    if(!selectedZoneId){ alert("Sélectionne une zone d’abord."); return; }
+    if(selectedZoneIndex === null){ alert("Sélectionne une zone d’abord."); return; }
     isDrawing = true;
     draftPoints = [];
     updateDrawStateText();
@@ -1102,7 +1158,7 @@
     if(isDrawing){
       drawState.innerHTML = `Mode dessin : <b>${draftPoints.length}</b> points. Clique pour ajouter, puis <b>Terminer</b>.`;
     } else {
-      drawState.textContent = selectedZoneId ? "Tu peux déplacer les points du polygone en les glissant." : "Aucune zone sélectionnée.";
+      drawState.textContent = (selectedZoneIndex !== null) ? "Tu peux déplacer les points du polygone en les glissant." : "Aucune zone sélectionnée.";
     }
   }
 
@@ -1329,15 +1385,16 @@
       for(const a of agents){
         const zoneName = (a.zoneName || "").trim();
         let targetZone = null;
-          if(!targetZone){
-            // fallback sur la première zone existante, sinon créer une zone importée
-            if(state.zones.length) targetZone = state.zones[0];
-            else { targetZone = { name: "Imported", points: "", agents: [] }; state.zones.push(targetZone); }
-        if(!targetZone){
-          // fallback sur la première zone existante, sinon créer une zone importée
-          if(state.zones.length) targetZone = state.zones[0];
-          else { const id = "Z_IMP"; targetZone = { id, name: "Imported", points: "", agents: [] }; state.zones.push(targetZone); }
+        if(zoneName){
+          targetZone = state.zones.find(z => String(z.name||"").trim().toLowerCase() === zoneName.toLowerCase());
         }
+        if(!targetZone){
+          if(state.zones.length) targetZone = state.zones[0];
+          else { targetZone = { name: "Imported", points: "", agents: [] }; state.zones.push(targetZone); }
+        }
+
+        // propagate unit from agent to zone if present
+        if(a.unit && !targetZone.unit) targetZone.unit = a.unit;
 
         targetZone.agents = targetZone.agents || [];
         const key = (a.name || "").trim().toLowerCase();
