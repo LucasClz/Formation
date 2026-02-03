@@ -43,7 +43,7 @@
       min-width: 320px;
     }
     .brand img{ height:34px; width:auto; display:block; }
-    .brand img[alt="FORMATION"]{ height:46px; }
+    .brand img[alt="FORMATION"]{ height:68px; }
     .navplain{ font-weight:900; color:#2f3b4a; cursor:pointer; }
     .navplain.active{ color: var(--blue); }
     .brand .divider{ width:1px; height:34px; background: rgba(255,255,255,.20); }
@@ -892,6 +892,10 @@
 
     for(let i=0;i<state.zones.length;i++){
       const z = state.zones[i];
+      // If in view mode and a unit filter is active, hide zones that don't match
+      if(activeTab === "view" && unitFilter && unitFilter.value && unitFilter.value !== "ALL"){
+        if(!z.unit || String(z.unit) !== String(unitFilter.value)) continue;
+      }
       const polygons = z.polygons || [];
       const isSelected = i === selectedZoneIndex;
       
@@ -1054,11 +1058,13 @@
   ========================= */
   function syncZoneSelect(){
     zoneSelect.innerHTML = "";
-
-    state.zones.forEach((z,i)=>{
+    // Populate creation dropdown sorted alphabetically (ascending) while preserving original indices
+    const sorted = state.zones.map((z,i)=>({ name: String(z.name||""), idx: i }))
+      .sort((a,b)=> a.name.localeCompare(b.name, 'fr', { sensitivity: 'base' }));
+    sorted.forEach(item=>{
       const opt = document.createElement("option");
-      opt.value = String(i);
-      opt.textContent = `${z.name || "(sans nom)"}`;
+      opt.value = String(item.idx);
+      opt.textContent = item.name || "(sans nom)";
       zoneSelect.appendChild(opt);
     });
 
