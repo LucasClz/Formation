@@ -1,0 +1,19 @@
+[
+  {
+    "id": "Z29A9A",
+    "name": "PRM4",
+    "points": "664,507 660,550 717,549 717,511 663,507",
+    "agents": [
+      {
+        "name": "Lucas",
+        "shift": "7h45 - 16h30",
+        "vacation": "A",
+        "trainings": {
+          "GF-SF": true,
+          "EPI": true,
+          "Extincteur": true
+        }
+      }
+    ]
+  }
+]
