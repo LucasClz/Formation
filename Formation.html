@@ -411,7 +411,9 @@
 
       state.zones = zones.map((z, i) => ({
         name: String(z.name || "(sans nom)"),
-        points: String(z.points || ""),
+        polygons: (z.polygons && Array.isArray(z.polygons)) 
+          ? z.polygons.map(p => String(p || ""))
+          : (z.points ? [String(z.points || "")] : []),
         unit: z.unit || null,
         agents: Array.isArray(z.agents) ? z.agents.map(a => ({
           name: String(a.name || ""),
@@ -439,16 +441,22 @@
 
     for(let i=0;i<state.zones.length;i++){
       const z = state.zones[i];
-      const poly = svgEl("polygon");
-      poly.setAttribute("points", z.points || "");
-      poly.setAttribute("class", "zonePoly" + (i === selectedZoneIndex ? " selected" : ""));
-      poly.addEventListener("click", (e)=>{
-        e.stopPropagation();
-        selectedZoneIndex = i;
-        renderZones();
-        updateViewPanel();
+      const polygons = z.polygons || [];
+      const isSelected = i === selectedZoneIndex;
+      
+      // Afficher tous les polygones de la zone
+      polygons.forEach((pointsStr)=>{
+        const poly = svgEl("polygon");
+        poly.setAttribute("points", pointsStr || "");
+        poly.setAttribute("class", "zonePoly" + (isSelected ? " selected" : ""));
+        poly.addEventListener("click", (e)=>{
+          e.stopPropagation();
+          selectedZoneIndex = i;
+          renderZones();
+          updateViewPanel();
+        });
+        zonesLayer.appendChild(poly);
       });
-      zonesLayer.appendChild(poly);
     }
   }
 
