@@ -381,7 +381,10 @@
         <div id="viewPanel" style="display:none;">
           <div class="card">
             <div class="title">MES INFORMATIONS</div>
-
+            <div style="margin-top:8px; margin-bottom:8px;">
+              <label class="small">Zone</label>
+              <select id="viewZoneSelect" style="width:100%;"></select>
+            </div>
             <div class="row">
               <div>
                 <div class="muted">Nom de la zone</div>
@@ -563,6 +566,7 @@
   const v_agentsList = document.getElementById("v_agentsList");
 
   const zoneSelect = document.getElementById("zoneSelect");
+  const viewZoneSelect = document.getElementById("viewZoneSelect");
   const zoneNameInput = document.getElementById("zoneNameInput");
   const zoneUnitSelect = document.getElementById("zoneUnitSelect");
   const newZoneBtn = document.getElementById("newZoneBtn");
@@ -1067,6 +1071,25 @@
       zoneSelect.value = "0";
     }
     updateCreationFields();
+    // Keep view dropdown in sync as well
+    syncViewZoneSelect();
+  }
+
+  function syncViewZoneSelect(){
+    if(!viewZoneSelect) return;
+    viewZoneSelect.innerHTML = "";
+    state.zones.forEach((z,i)=>{
+      const opt = document.createElement("option");
+      opt.value = String(i);
+      opt.textContent = `${z.name || "(sans nom)"}`;
+      viewZoneSelect.appendChild(opt);
+    });
+    if(state.zones.length === 0){
+      viewZoneSelect.value = "";
+      return;
+    }
+    if(selectedZoneIndex === null) selectedZoneIndex = 0;
+    viewZoneSelect.value = String(selectedZoneIndex);
   }
 
   function updateCreationFields(){
@@ -1091,6 +1114,16 @@
     updateCreationFields();
     updatePanels();
   });
+
+  if(viewZoneSelect){
+    viewZoneSelect.addEventListener("change", ()=>{
+      const val = viewZoneSelect.value;
+      if(val === "") return;
+      selectedZoneIndex = Number(val);
+      renderZones();
+      updatePanels();
+    });
+  }
 
   zoneNameInput.addEventListener("input", ()=>{
     const zone = getSelectedZone();
