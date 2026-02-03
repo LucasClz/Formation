@@ -499,7 +499,8 @@
 
   let state = { zones: [] };
   let activeTab = "view";
-  let selectedZoneId = null;
+  // Use index for selection (no permanent IDs on zones)
+  let selectedZoneIndex = null;
 
   let isDrawing = false;
   let draftPoints = [];
@@ -590,7 +591,8 @@
       loadStatusText.textContent = `Impossible de charger Zone.json (${e.message}).`;
     }
 
-    selectedZoneId = state.zones.length ? state.zones[0].id : null;
+    // select first zone by index if any (zones have no persistent id)
+    selectedZoneIndex = state.zones.length ? 0 : null;
     renderZones();
     syncZoneSelect();
     updatePanels();
@@ -631,7 +633,7 @@
   navCreation.addEventListener("click", ()=>setTab("create"));
 
   deselectBtn.addEventListener("click", ()=>{
-    selectedZoneId = null;
+    selectedZoneIndex = null;
     stopDrawing(false);
     renderZones();
     updatePanels();
@@ -829,13 +831,14 @@
     zonesLayer.innerHTML = "";
     editLayer.innerHTML = "";
 
-    for(const z of state.zones){
+    for(let i=0;i<state.zones.length;i++){
+      const z = state.zones[i];
       const poly = svgEl("polygon");
       poly.setAttribute("points", z.points || "");
-      poly.setAttribute("class", "zonePoly" + (z.id === selectedZoneId ? " selected" : ""));
+      poly.setAttribute("class", "zonePoly" + (i === selectedZoneIndex ? " selected" : ""));
       poly.addEventListener("click", (e)=>{
         e.stopPropagation();
-        selectedZoneId = z.id;
+        selectedZoneIndex = i;
         if(activeTab === "create") syncZoneSelect();
         renderZones();
         updatePanels();
@@ -843,7 +846,7 @@
       zonesLayer.appendChild(poly);
     }
 
-    if(activeTab === "create" && selectedZoneId){
+    if(activeTab === "create" && selectedZoneIndex !== null){
       const zone = getSelectedZone();
       if(zone && zone.points){
         const pts = parsePoints(zone.points);
@@ -855,7 +858,7 @@
           c.setAttribute("class", "vertex");
           c.addEventListener("mousedown", (e)=>{
             e.stopPropagation();
-            draggingVertex = { zoneId: zone.id, index: idx };
+            draggingVertex = { zoneIndex: selectedZoneIndex, index: idx };
             const svgP = clientToSvg(e.clientX, e.clientY);
             dragOffset.x = svgP.x - p.x;
             dragOffset.y = svgP.y - p.y;
@@ -979,10 +982,10 @@
   function syncZoneSelect(){
     zoneSelect.innerHTML = "";
 
-    state.zones.forEach(z=>{
+    state.zones.forEach((z,i)=>{
       const opt = document.createElement("option");
-      opt.value = z.id;
-      opt.textContent = `${z.name || "(sans nom)"} — ${z.id}`;
+      opt.value = String(i);
+      opt.textContent = `${z.name || "(sans nom)"}`;
       zoneSelect.appendChild(opt);
     });
 
@@ -994,11 +997,11 @@
       return;
     }
 
-    if(selectedZoneId){
-      zoneSelect.value = selectedZoneId;
+    if(selectedZoneIndex !== null){
+      zoneSelect.value = String(selectedZoneIndex);
     } else {
-      selectedZoneId = state.zones[0].id;
-      zoneSelect.value = selectedZoneId;
+      selectedZoneIndex = 0;
+      zoneSelect.value = "0";
     }
     updateCreationFields();
   }
@@ -1018,7 +1021,7 @@
   }
 
   zoneSelect.addEventListener("change", ()=>{
-    selectedZoneId = zoneSelect.value;
+    selectedZoneIndex = Number(zoneSelect.value);
     stopDrawing(false);
     renderZones();
     updateCreationFields();
@@ -1037,9 +1040,8 @@
   newZoneBtn.addEventListener("click", ()=>{
     const name = prompt("Nom de la nouvelle zone ?");
     if(!name) return;
-    const id = "Z" + Math.random().toString(16).slice(2,7).toUpperCase();
-    state.zones.push({ id, name: name.trim(), points:"", agents:[] });
-    selectedZoneId = id;
+    state.zones.push({ name: name.trim(), points:"", agents:[] });
+    selectedZoneIndex = state.zones.length - 1;
     syncZoneSelect();
     renderZones();
     updatePanels();
@@ -1049,8 +1051,9 @@
     const zone = getSelectedZone();
     if(!zone) return;
     if(!confirm(`Supprimer la zone "${zone.name}" ?`)) return;
-    state.zones = state.zones.filter(z=>z.id !== zone.id);
-    selectedZoneId = state.zones.length ? state.zones[0].id : null;
+    // remove by index
+    state.zones.splice(selectedZoneIndex, 1);
+    selectedZoneIndex = state.zones.length ? 0 : null;
     stopDrawing(false);
     renderZones();
     syncZoneSelect();
@@ -1058,11 +1061,13 @@
   });
 
   exportJsonBtn.addEventListener("click", ()=>{
+    // Export zones without internal ids
     const exportZones = state.zones.map(z => ({
-      id: z.id,
       name: z.name,
       points: z.points,
-      agents: z.agents
+      agents: z.agents,
+      // optional unit field preserved if present
+      unit: z.unit || null
     }));
     downloadJson(exportZones, "Zone.json");
   });
@@ -1111,7 +1116,7 @@
 
   window.addEventListener("mousemove", (e)=>{
     if(activeTab !== "create" || !draggingVertex) return;
-    const zone = state.zones.find(z=>z.id === draggingVertex.zoneId);
+    const zone = state.zones[draggingVertex.zoneIndex];
     if(!zone) return;
 
     const pts = parsePoints(zone.points);
@@ -1255,7 +1260,7 @@
     updateViewPanel();
     if(activeTab === "create") updateCreationFields();
   }
-  function getSelectedZone(){ return state.zones.find(z=>z.id === selectedZoneId) || null; }
+  function getSelectedZone(){ return (selectedZoneIndex !== null && state.zones[selectedZoneIndex]) ? state.zones[selectedZoneIndex] : null; }
   function svgEl(tag){ return document.createElementNS("http://www.w3.org/2000/svg", tag); }
 
   function parsePoints(pointsStr){
@@ -1324,9 +1329,10 @@
       for(const a of agents){
         const zoneName = (a.zoneName || "").trim();
         let targetZone = null;
-        if(zoneName){
-          targetZone = state.zones.find(z => String(z.name||"").trim().toLowerCase() === zoneName.toLowerCase());
-        }
+          if(!targetZone){
+            // fallback sur la première zone existante, sinon créer une zone importée
+            if(state.zones.length) targetZone = state.zones[0];
+            else { targetZone = { name: "Imported", points: "", agents: [] }; state.zones.push(targetZone); }
         if(!targetZone){
           // fallback sur la première zone existante, sinon créer une zone importée
           if(state.zones.length) targetZone = state.zones[0];
