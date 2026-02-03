@@ -20,16 +20,6 @@
       --blue2:#0a6ab0;
       --accent:#00a3e0;
     }
-    [data-theme="dark"]{
-      --bg:#1a1a1a;
-      --top:#0f0f0f;
-      --top2:#1f1f1f;
-      --panel:#222;
-      --card:#2a2a2a;
-      --text:#e0e0e0;
-      --muted:#a0a0a0;
-      --border:#333;
-    }
     *{ box-sizing:border-box; }
     html,body{ height:100%; }
     body{
@@ -204,35 +194,6 @@
       0%{ stroke-width:6; opacity:0.7; }
       100%{ stroke-width:2; opacity:1; }
     }
-    .zoneLabel{
-      font-size:14px;
-      font-weight:900;
-      fill:#fff;
-      text-anchor:middle;
-      pointer-events:none;
-      text-shadow:0 1px 3px rgba(0,0,0,.5);
-    }
-    .darkModeToggle{
-      position:absolute;
-      top:14px;
-      right:14px;
-      z-index:10;
-      background:#fff;
-      border:1px solid var(--border);
-      border-radius:999px;
-      width:44px;
-      height:44px;
-      cursor:pointer;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      font-size:20px;
-      transition:.2s;
-      box-shadow: 0 2px 8px rgba(0,0,0,.1);
-    }
-    .darkModeToggle:hover{ background:#f3f4f6; }
-    [data-theme="dark"] .darkModeToggle{ background:#2a2a2a; color:#e0e0e0; }
-    [data-theme="dark"] .darkModeToggle:hover{ background:#333; }
     .vertex{
       fill:#fff;
       stroke: rgba(0,0,0,.35);
@@ -342,24 +303,11 @@
     @media (max-width: 1100px){
       .app{ grid-template-columns: 1fr; height:auto; }
       .panel{ height:auto; }
-      .toolbar{ flex-direction:column; align-items:flex-start; }
-      .toolbar > label, .toolbar > select{ width:100%; }
-    }
-    @media (max-width: 768px){
-      .topbar{ height:60px; padding:0 12px; }
-      .brand img{ height:28px; }
-      .brand img[alt="FORMATION"]{ height:90px; }
-      .subnav{ height:40px; padding:0 12px; gap:8px; }
-      .app{ padding:12px; gap:12px; }
-      .toolbar{ top:10px; left:10px; padding:8px 10px; gap:8px; font-size:11px; }
-      .darkModeToggle{ top:10px; right:10px; width:40px; height:40px; font-size:18px; }
-      select, button, input{ padding:6px 8px; font-size:12px; }
-      .title{ font-size:16px; }
     }
   </style>
 </head>
 
-<body data-theme="light">
+<body>
   <header class="topbar">
     <div class="brand">
       <img src="sncf.png" alt="SNCF">
@@ -376,7 +324,6 @@
   <div class="app">
     <!-- Map -->
     <div class="canvasWrap">
-      <button class="darkModeToggle" id="darkModeToggle" title="Basculer thème sombre/clair">🌙</button>
       <div class="toolbar">
         <span class="pill">Mode : <b id="modeLabel">Vue</b></span>
 
@@ -573,23 +520,6 @@
 
   <script>
   /* =========================
-     Dark Mode
-  ========================= */
-  const darkModeToggle = document.getElementById("darkModeToggle");
-  const html = document.documentElement;
-  const savedTheme = localStorage.getItem("theme") || "light";
-  html.setAttribute("data-theme", savedTheme);
-  darkModeToggle.textContent = savedTheme === "dark" ? "☀️" : "🌙";
-  
-  darkModeToggle.addEventListener("click", ()=>{
-    const current = html.getAttribute("data-theme") || "light";
-    const newTheme = current === "light" ? "dark" : "light";
-    html.setAttribute("data-theme", newTheme);
-    localStorage.setItem("theme", newTheme);
-    darkModeToggle.textContent = newTheme === "dark" ? "☀️" : "🌙";
-  });
-
-  /* =========================
      Data
   ========================= */
   const formations = ["GF-SF", "EPI", "Extincteur"];
@@ -606,7 +536,6 @@
 
   let draggingVertex = null;
   let dragOffset = {x:0,y:0};
-  let undoStack = [];
 
   /* =========================
      DOM
@@ -961,23 +890,6 @@
   }
 
   /* =========================
-     Undo/Redo
-  ========================= */
-  function saveState(){
-    undoStack.push(JSON.parse(JSON.stringify(state)));
-    if(undoStack.length > 20) undoStack.shift();
-  }
-  function undo(){
-    if(undoStack.length > 0){
-      state = undoStack.pop();
-      selectedZoneIndex = null;
-      renderZones();
-      syncZoneSelect();
-      updatePanels();
-    }
-  }
-
-  /* =========================
      Render zones
   ========================= */
   function renderZones(){
@@ -994,7 +906,6 @@
       const isSelected = i === selectedZoneIndex;
       
       // Afficher tous les polygones de la zone
-      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
       polygons.forEach((pointsStr, polyIdx)=>{
         const poly = svgEl("polygon");
         poly.setAttribute("points", pointsStr || "");
@@ -1007,30 +918,7 @@
           updatePanels();
         });
         zonesLayer.appendChild(poly);
-        
-        // Calculer centre du polygone pour le label
-        const pts = parsePoints(pointsStr);
-        pts.forEach(p => {
-          minX = Math.min(minX, p.x);
-          minY = Math.min(minY, p.y);
-          maxX = Math.max(maxX, p.x);
-          maxY = Math.max(maxY, p.y);
-        });
       });
-      
-      // Ajouter label avec nombre d'agents au centre
-      if(polygons.length > 0 && minX !== Infinity){
-        const centerX = (minX + maxX) / 2;
-        const centerY = (minY + maxY) / 2;
-        const agentCount = z.agents ? z.agents.length : 0;
-        
-        const label = svgEl("text");
-        label.setAttribute("x", centerX);
-        label.setAttribute("y", centerY);
-        label.setAttribute("class", "zoneLabel");
-        label.textContent = agentCount;
-        zonesLayer.appendChild(label);
-      }
     }
 
     if(activeTab === "create" && selectedZoneIndex !== null){
@@ -1334,20 +1222,6 @@
     renderZones();
   });
   finishDrawBtn.addEventListener("click", ()=> stopDrawing(true));
-
-  /* Keyboard shortcuts */
-  window.addEventListener("keydown", (e)=>{
-    if(e.key === "Escape"){
-      selectedZoneIndex = null;
-      stopDrawing(false);
-      renderZones();
-      updatePanels();
-    }
-    if((e.ctrlKey || e.metaKey) && e.key === "z"){
-      e.preventDefault();
-      undo();
-    }
-  });
 
   function stopDrawing(apply){
     if(!isDrawing) return;
