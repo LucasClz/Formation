@@ -319,6 +319,15 @@
       <div class="toolbar">
         <span class="pill">Mode : <b id="modeLabel">Vue</b></span>
 
+        <label class="small">Unité Opérationnelle</label>
+        <select id="unitFilter">
+          <option value="ALL">Vision globale</option>
+          <option value="PRM">PRM</option>
+          <option value="QSE">QSE</option>
+          <option value="MR">MR</option>
+          <option value="SC">SC</option>
+        </select>
+
         <label class="small">Formation</label>
         <select id="formationSelect">
           <option value="EPI">EPI</option>
@@ -573,6 +582,9 @@
   const clearExcelBtn = document.getElementById("clearExcelBtn");
   const importResult = document.getElementById("importResult");
 
+  // Unit filter
+  const unitFilter = document.getElementById("unitFilter");
+
   /* =========================
      Load Zone.json
   ========================= */
@@ -650,6 +662,7 @@
     updatePanels();
   });
 
+  unitFilter.addEventListener("change", updatePanels);
   formationSelect.addEventListener("change", updatePanels);
   vacationFilter.addEventListener("change", updatePanels);
   shiftFilter.addEventListener("change", updatePanels);
@@ -946,12 +959,14 @@
     return { total, formed, pct };
   }
   function filterAgents(zoneAgents){
+    const u = unitFilter.value;
     const v = vacationFilter.value;
     const s = shiftFilter.value;
     return zoneAgents.filter(a=>{
+      const okU = (u === "ALL") || (a.unit === u);
       const okV = (v === "ALL") || (a.vacation === v);
       const okS = (s === "ALL") || (a.shift === s);
-      return okV && okS;
+      return okU && okV && okS;
     });
   }
 
@@ -982,13 +997,14 @@
 
     const filteredAgents = filterAgents(agents);
     const filtStats = computeStats(filteredAgents, formation);
+    const unitTxt = unitFilter.value === "ALL" ? "globale" : unitFilter.value;
     const vacTxt = vacationFilter.value === "ALL" ? "toutes" : vacationFilter.value;
     const shiftTxt = shiftFilter.value === "ALL" ? "tous" : shiftFilter.value;
 
     v_filteredLabel.textContent = `Filtré (${formation})`;
     v_filteredPct.textContent = `${filtStats.pct}%`;
     v_filteredBar.style.width = `${filtStats.pct}%`;
-    v_filteredDetail.textContent = `${filtStats.formed} / ${filtStats.total} — vacation ${vacTxt}, horaire ${shiftTxt}`;
+    v_filteredDetail.textContent = `${filtStats.formed} / ${filtStats.total} — unité ${unitTxt}, vacation ${vacTxt}, horaire ${shiftTxt}`;
 
     v_agentsList.innerHTML = "";
     agents.forEach(a=>{
@@ -1003,6 +1019,7 @@
       const meta = document.createElement("div");
       meta.className = "metaLine";
       meta.innerHTML = `
+        <span class="metaChip"><b>Unité</b> ${escapeHtml(a.unit || "-")}</span>
         <span class="metaChip"><b>Horaire</b> ${escapeHtml(a.shift || "-")}</span>
         <span class="metaChip"><b>Vacation</b> ${escapeHtml(a.vacation || "-")}</span>
       `;
@@ -1426,7 +1443,7 @@
     await loadZonesJson();
     await loadDefaultExcelOnStartup();
   }
-  init(); 
+  init();
   </script>
 </body>
 </html>
