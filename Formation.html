@@ -42,8 +42,8 @@
       display:flex; align-items:center; gap:16px;
       min-width: 320px;
     }
-    .brand img{ height:34px; width:auto; display:block; }
-    .brand img[alt="FORMATION"]{ height:46px; }
+    .brand img{ height:34px; width:auto; display:block; background-color:transparent !important; background:transparent !important; mix-blend-mode:normal; filter:none !important; -webkit-filter:none !important; image-rendering:auto; box-shadow:none; border:none; }
+    .brand img[alt="FORMATION"]{ height:136px; background:transparent !important; background-color:transparent !important; }
     .brand .divider{ width:1px; height:34px; background: rgba(255,255,255,.20); }
 
     /* Subnav */
@@ -174,6 +174,12 @@
     .zonePoly.selected{
       fill: rgba(255,206,86,.25);
       stroke: rgba(255,152,0,.95);
+      animation: zoneHighlight 900ms ease-out;
+    }
+
+    @keyframes zoneHighlight{
+      0%{ stroke-width:6; opacity:0.7; }
+      100%{ stroke-width:2; opacity:1; }
     }
 
     /* Panel */
@@ -449,14 +455,32 @@
     // sort zones alphabetically by name (locale-aware)
     const sorted = state.zones.map((z,i)=>({ name: String(z.name||""), idx: i }))
       .sort((a,b)=> a.name.localeCompare(b.name, 'fr', { sensitivity: 'base' }));
-    sorted.forEach(item=>{
+
+    // Apply unit filter: show only zones matching selected unit (or all)
+    const unit = (unitFilter && unitFilter.value) ? unitFilter.value : "ALL";
+    const visible = sorted.filter(item => {
+      if(unit === "ALL") return true;
+      const z = state.zones[item.idx];
+      return z && z.unit && String(z.unit) === String(unit);
+    });
+
+    visible.forEach(item=>{
       const opt = document.createElement("option");
       opt.value = String(item.idx);
       opt.textContent = item.name || "(sans nom)";
       viewZoneSelect.appendChild(opt);
     });
-    if(state.zones.length === 0){ viewZoneSelect.value = ""; return; }
-    if(selectedZoneIndex === null) selectedZoneIndex = 0;
+
+    if(visible.length === 0){
+      viewZoneSelect.value = "";
+      if(selectedZoneIndex !== null) selectedZoneIndex = null;
+      return;
+    }
+
+    const visibleIdxs = visible.map(v=>v.idx);
+    if(selectedZoneIndex === null || !visibleIdxs.includes(selectedZoneIndex)){
+      selectedZoneIndex = visibleIdxs[0];
+    }
     viewZoneSelect.value = String(selectedZoneIndex);
   }
 
@@ -468,6 +492,10 @@
 
     for(let i=0;i<state.zones.length;i++){
       const z = state.zones[i];
+      // If a unit filter is active, hide zones that don't match
+      if(unitFilter && unitFilter.value && unitFilter.value !== "ALL"){
+        if(!z.unit || String(z.unit) !== String(unitFilter.value)) continue;
+      }
       const polygons = z.polygons || [];
       const isSelected = i === selectedZoneIndex;
       
@@ -607,7 +635,7 @@
     updateViewPanel();
   });
 
-  unitFilter.addEventListener("change", updateViewPanel);
+  unitFilter.addEventListener("change", ()=>{ syncViewZoneSelect(); renderZones(); updateViewPanel(); });
   formationSelect.addEventListener("change", updateViewPanel);
   vacationFilter.addEventListener("change", updateViewPanel);
   shiftFilter.addEventListener("change", updateViewPanel);
