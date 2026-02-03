@@ -4,6 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Cartographie – Formations</title>
+
   <style>
     :root{
       --bg:#e7e4df;
@@ -19,7 +20,6 @@
       --blue2:#0a6ab0;
       --accent:#00a3e0;
     }
-
     *{ box-sizing:border-box; }
     html,body{ height:100%; }
     body{
@@ -29,29 +29,23 @@
       color: var(--text);
     }
 
-    /* ===== Header ===== */
+    /* Header */
     .topbar{
       height:70px;
       background: var(--top);
       display:flex;
       align-items:center;
-      justify-content:flex-start; /* plus d'actions à droite */
+      justify-content:flex-start;
       padding: 0 18px;
     }
     .brand{
       display:flex; align-items:center; gap:16px;
       min-width: 320px;
     }
-    .brand img{
-      height:34px;
-      width:auto;
-      display:block;
-    }
-    .brand .divider{
-      width:1px; height:34px; background: rgba(255,255,255,.20);
-    }
+    .brand img{ height:34px; width:auto; display:block; }
+    .brand .divider{ width:1px; height:34px; background: rgba(255,255,255,.20); }
 
-    /* ===== Subnav (Vue > Création) ===== */
+    /* Subnav */
     .subnav{
       height:46px;
       background: var(--top2);
@@ -66,12 +60,10 @@
     .navlink{
       display:inline-flex;
       align-items:center;
-      gap:10px;
       padding:8px 12px;
       border-radius:10px;
       font-weight:900;
       color:#2f3b4a;
-      text-decoration:none;
       border:1px solid transparent;
       cursor:pointer;
       user-select:none;
@@ -82,12 +74,9 @@
       border-color: rgba(11,119,197,.25);
       color: var(--blue);
     }
-    .sep{
-      color:#9aa3af;
-      font-weight:900;
-    }
+    .sep{ color:#9aa3af; font-weight:900; }
 
-    /* ===== App ===== */
+    /* App */
     .app{
       display:grid;
       grid-template-columns: 1fr 440px;
@@ -95,14 +84,12 @@
       padding:16px;
       height: calc(100vh - 70px - 46px);
     }
-
     .canvasWrap{
       position:relative;
       border-radius:12px;
       overflow:hidden;
       min-height: 520px;
     }
-
     .toolbar{
       position:absolute;
       top:14px;
@@ -136,7 +123,6 @@
       color: var(--muted);
       font-weight:900;
     }
-
     select, button, input{
       border:1px solid var(--border);
       border-radius:10px;
@@ -150,7 +136,6 @@
       box-shadow: 0 0 0 3px rgba(11,119,197,.15);
       border-color: rgba(11,119,197,.35);
     }
-
     button{
       cursor:pointer;
       background: var(--blue);
@@ -158,6 +143,7 @@
       color:#fff;
       transition:.12s;
       font-weight:900;
+      white-space:nowrap;
     }
     button:hover{ background: var(--blue2); }
     button.ghost{
@@ -166,7 +152,7 @@
     }
     button.ghost:hover{ background:#f3f4f6; }
     button.warn{
-      background: #fff;
+      background:#fff;
       color:#8a5b00;
       border-color: rgba(255,206,86,.55);
     }
@@ -207,7 +193,7 @@
     }
     .vertex:hover{ fill: rgba(255,206,86,.95); }
 
-    /* Right panel */
+    /* Panel */
     .panel{
       background: var(--panel);
       border:1px solid #dcdcdc;
@@ -215,13 +201,7 @@
       padding:14px;
       overflow:auto;
     }
-
-    /* Tabs (conservés) */
-    .tabs{
-      display:flex;
-      gap:10px;
-      margin-bottom:14px;
-    }
+    .tabs{ display:flex; gap:10px; margin-bottom:14px; }
     .tabBtn{
       flex:1;
       border:1px solid var(--border);
@@ -295,6 +275,22 @@
       font-weight:700;
     }
 
+    /* Import Excel */
+    .fileRow{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      flex-wrap:wrap;
+    }
+    .fileRow input[type="file"]{
+      padding:10px;
+      border-radius:12px;
+      background:#fff;
+      border:1px dashed rgba(11,119,197,.35);
+      font-weight:700;
+      width:100%;
+    }
+
     @media (max-width: 1100px){
       .app{ grid-template-columns: 1fr; height:auto; }
       .panel{ height:auto; }
@@ -303,8 +299,6 @@
 </head>
 
 <body>
-
-  <!-- Header -->
   <header class="topbar">
     <div class="brand">
       <img src="sncf.png" alt="SNCF">
@@ -313,14 +307,12 @@
     </div>
   </header>
 
-  <!-- Subnav -->
   <nav class="subnav">
     <div id="navVue" class="navlink active" role="button" tabindex="0">Vue</div>
     <span class="sep">›</span>
     <div id="navCreation" class="navlink" role="button" tabindex="0">Création</div>
   </nav>
 
-  <!-- App -->
   <div class="app">
     <!-- Map -->
     <div class="canvasWrap">
@@ -359,7 +351,7 @@
       </svg>
     </div>
 
-    <!-- Right panel -->
+    <!-- Panel -->
     <aside class="panel">
       <div class="tabs">
         <button class="tabBtn active" id="tabView">Vue</button>
@@ -468,8 +460,22 @@
             <button id="addAgentBtn">+ Ajouter agent</button>
           </div>
           <div class="muted" style="margin-top:6px;">
-            Champs agent : <b>Nom</b>, <b>Plage horaire</b>, <b>Vacation</b>, + formations.
+            Import Excel attendu : <b>Nom agent</b>, <b>Plage horaire</b>, <b>Vacations</b>, <b>GF-SF</b>, <b>EPI</b>, <b>Extincteur</b>
           </div>
+
+          <!-- Import file -->
+          <div class="hr"></div>
+          <div class="stack">
+            <div style="font-weight:900;">Importer un fichier Excel (.xlsx)</div>
+            <div class="fileRow">
+              <input id="excelFile" type="file" accept=".xlsx,.xls" />
+              <button id="importExcelBtn">Importer dans la zone</button>
+              <button id="clearExcelBtn" class="ghost">Réinitialiser</button>
+            </div>
+            <div class="muted" id="importResult"></div>
+          </div>
+
+          <div class="hr"></div>
 
           <div id="c_agentsEmpty" class="muted" style="margin-top:10px; display:none;">
             Sélectionne une zone pour éditer ses agents.
@@ -480,640 +486,884 @@
     </aside>
   </div>
 
-<script>
-/* =========================
-   Data
-========================= */
-const formations = ["GF-SF", "EPI", "Extincteur"];
-const shifts = ["4h - 12h", "7h45 - 16h30", "20h - 4h"];
-const vacations = ["A", "B"];
+  <!-- SheetJS (xlsx) -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
-let state = { viewBox: "0 0 1200 700", zones: [] };
+  <script>
+  /* =========================
+     Data
+  ========================= */
+  const formations = ["GF-SF", "EPI", "Extincteur"];
+  const shifts = ["4h - 12h", "7h45 - 16h30", "20h - 4h"]; // utilisés par les filtres
+  const vacations = ["A", "B"];
 
-let activeTab = "view";
-let selectedZoneId = null;
+  let state = { zones: [] };
+  let activeTab = "view";
+  let selectedZoneId = null;
 
-let isDrawing = false;
-let draftPoints = [];
+  let isDrawing = false;
+  let draftPoints = [];
 
-let draggingVertex = null;
-let dragOffset = {x:0,y:0};
+  let draggingVertex = null;
+  let dragOffset = {x:0,y:0};
 
-/* =========================
-   DOM
-========================= */
-const mapSvg = document.getElementById("mapSvg");
-const zonesLayer = document.getElementById("zonesLayer");
-const editLayer = document.getElementById("editLayer");
+  /* =========================
+     DOM
+  ========================= */
+  const mapSvg = document.getElementById("mapSvg");
+  const zonesLayer = document.getElementById("zonesLayer");
+  const editLayer = document.getElementById("editLayer");
 
-const tabView = document.getElementById("tabView");
-const tabCreate = document.getElementById("tabCreate");
-const viewSection = document.getElementById("viewSection");
-const createSection = document.getElementById("createSection");
-const modeLabel = document.getElementById("modeLabel");
+  const tabView = document.getElementById("tabView");
+  const tabCreate = document.getElementById("tabCreate");
+  const viewSection = document.getElementById("viewSection");
+  const createSection = document.getElementById("createSection");
+  const modeLabel = document.getElementById("modeLabel");
 
-const navVue = document.getElementById("navVue");
-const navCreation = document.getElementById("navCreation");
+  const navVue = document.getElementById("navVue");
+  const navCreation = document.getElementById("navCreation");
 
-const formationSelect = document.getElementById("formationSelect");
-const vacationFilter = document.getElementById("vacationFilter");
-const shiftFilter = document.getElementById("shiftFilter");
-const deselectBtn = document.getElementById("deselectBtn");
+  const formationSelect = document.getElementById("formationSelect");
+  const vacationFilter = document.getElementById("vacationFilter");
+  const shiftFilter = document.getElementById("shiftFilter");
+  const deselectBtn = document.getElementById("deselectBtn");
 
-const loadStatusText = document.getElementById("loadStatusText");
-const emptyView = document.getElementById("emptyView");
-const viewPanel = document.getElementById("viewPanel");
-const v_zoneName = document.getElementById("v_zoneName");
-const v_zoneCount = document.getElementById("v_zoneCount");
-const v_totalLabel = document.getElementById("v_totalLabel");
-const v_totalDetail = document.getElementById("v_totalDetail");
-const v_totalPct = document.getElementById("v_totalPct");
-const v_totalBar = document.getElementById("v_totalBar");
-const v_filteredLabel = document.getElementById("v_filteredLabel");
-const v_filteredDetail = document.getElementById("v_filteredDetail");
-const v_filteredPct = document.getElementById("v_filteredPct");
-const v_filteredBar = document.getElementById("v_filteredBar");
-const v_agentsList = document.getElementById("v_agentsList");
+  const loadStatusText = document.getElementById("loadStatusText");
+  const emptyView = document.getElementById("emptyView");
+  const viewPanel = document.getElementById("viewPanel");
+  const v_zoneName = document.getElementById("v_zoneName");
+  const v_zoneCount = document.getElementById("v_zoneCount");
+  const v_totalLabel = document.getElementById("v_totalLabel");
+  const v_totalDetail = document.getElementById("v_totalDetail");
+  const v_totalPct = document.getElementById("v_totalPct");
+  const v_totalBar = document.getElementById("v_totalBar");
+  const v_filteredLabel = document.getElementById("v_filteredLabel");
+  const v_filteredDetail = document.getElementById("v_filteredDetail");
+  const v_filteredPct = document.getElementById("v_filteredPct");
+  const v_filteredBar = document.getElementById("v_filteredBar");
+  const v_agentsList = document.getElementById("v_agentsList");
 
-const zoneSelect = document.getElementById("zoneSelect");
-const zoneNameInput = document.getElementById("zoneNameInput");
-const newZoneBtn = document.getElementById("newZoneBtn");
-const deleteZoneBtn = document.getElementById("deleteZoneBtn");
-const exportJsonBtn = document.getElementById("exportJsonBtn");
-const startDrawBtn = document.getElementById("startDrawBtn");
-const finishDrawBtn = document.getElementById("finishDrawBtn");
-const drawState = document.getElementById("drawState");
+  const zoneSelect = document.getElementById("zoneSelect");
+  const zoneNameInput = document.getElementById("zoneNameInput");
+  const newZoneBtn = document.getElementById("newZoneBtn");
+  const deleteZoneBtn = document.getElementById("deleteZoneBtn");
+  const exportJsonBtn = document.getElementById("exportJsonBtn");
+  const startDrawBtn = document.getElementById("startDrawBtn");
+  const finishDrawBtn = document.getElementById("finishDrawBtn");
+  const drawState = document.getElementById("drawState");
 
-const addAgentBtn = document.getElementById("addAgentBtn");
-const c_agentsEmpty = document.getElementById("c_agentsEmpty");
-const c_agentsList = document.getElementById("c_agentsList");
+  const addAgentBtn = document.getElementById("addAgentBtn");
+  const c_agentsEmpty = document.getElementById("c_agentsEmpty");
+  const c_agentsList = document.getElementById("c_agentsList");
 
-/* =========================
-   Load Zone.json
-========================= */
-async function loadZonesJson() {
-  try {
-    const res = await fetch("Zone.json?ts=" + Date.now(), { cache: "no-store" });
-    if (!res.ok) throw new Error("HTTP " + res.status);
-    const zones = await res.json();
-    if (!Array.isArray(zones)) throw new Error("Zone.json doit être un tableau []");
+  // Import Excel
+  const excelFile = document.getElementById("excelFile");
+  const importExcelBtn = document.getElementById("importExcelBtn");
+  const clearExcelBtn = document.getElementById("clearExcelBtn");
+  const importResult = document.getElementById("importResult");
 
-    state.zones = zones.map((z, i) => ({
-      id: String(z.id || ("Z" + (i+1))),
-      name: String(z.name || "(sans nom)"),
-      points: String(z.points || ""),
-      agents: Array.isArray(z.agents) ? z.agents.map(a => ({
-        name: String(a.name || ""),
-        shift: shifts.includes(a.shift) ? a.shift : shifts[1],
-        vacation: vacations.includes(a.vacation) ? a.vacation : "A",
-        trainings: normalizeTrainings(a.trainings || {})
-      })) : []
-    }));
+  /* =========================
+     Load Zone.json
+  ========================= */
+  async function loadZonesJson() {
+    try {
+      const res = await fetch("Zone.json?ts=" + Date.now(), { cache: "no-store" });
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      const zones = await res.json();
+      if (!Array.isArray(zones)) throw new Error("Zone.json doit être un tableau []");
 
-    loadStatusText.textContent = `Zone.json chargé : ${state.zones.length} zone(s).`;
-  } catch (e) {
-    state.zones = [];
-    loadStatusText.textContent = `Impossible de charger Zone.json (${e.message}).`;
-  }
+      state.zones = zones.map((z, i) => ({
+        id: String(z.id || ("Z" + (i+1))),
+        name: String(z.name || "(sans nom)"),
+        points: String(z.points || ""),
+        agents: Array.isArray(z.agents) ? z.agents.map(a => ({
+          name: String(a.name || ""),
+          shift: String(a.shift || ""),
+          vacation: (a.vacation === "A" || a.vacation === "B") ? a.vacation : "A",
+          trainings: normalizeTrainings(a.trainings || {})
+        })) : []
+      }));
 
-  selectedZoneId = state.zones.length ? state.zones[0].id : null;
-  renderZones();
-  syncZoneSelect();
-  updatePanels();
-}
+      loadStatusText.textContent = `Zone.json chargé : ${state.zones.length} zone(s).`;
+    } catch (e) {
+      state.zones = [];
+      loadStatusText.textContent = `Impossible de charger Zone.json (${e.message}).`;
+    }
 
-/* =========================
-   Tabs + Nav (Vue > Création)
-========================= */
-function setTab(tab){
-  activeTab = tab;
-  const isView = tab === "view";
-
-  tabView.classList.toggle("active", isView);
-  tabCreate.classList.toggle("active", !isView);
-
-  navVue.classList.toggle("active", isView);
-  navCreation.classList.toggle("active", !isView);
-
-  viewSection.style.display = isView ? "block" : "none";
-  createSection.style.display = isView ? "none" : "block";
-  modeLabel.textContent = isView ? "Vue" : "Création";
-
-  if(isView){
-    stopDrawing(false);
-    editLayer.innerHTML = "";
-  } else {
-    if(!selectedZoneId && state.zones.length) selectedZoneId = state.zones[0].id;
+    selectedZoneId = state.zones.length ? state.zones[0].id : null;
+    renderZones();
     syncZoneSelect();
+    updatePanels();
   }
 
-  renderZones();
-  updatePanels();
-}
+  /* =========================
+     Tabs + Nav
+  ========================= */
+  function setTab(tab){
+    activeTab = tab;
+    const isView = tab === "view";
 
-tabView.addEventListener("click", ()=>setTab("view"));
-tabCreate.addEventListener("click", ()=>setTab("create"));
-navVue.addEventListener("click", ()=>setTab("view"));
-navCreation.addEventListener("click", ()=>setTab("create"));
+    tabView.classList.toggle("active", isView);
+    tabCreate.classList.toggle("active", !isView);
 
-deselectBtn.addEventListener("click", ()=>{
-  selectedZoneId = null;
-  stopDrawing(false);
-  renderZones();
-  updatePanels();
-});
+    navVue.classList.toggle("active", isView);
+    navCreation.classList.toggle("active", !isView);
 
-formationSelect.addEventListener("change", updatePanels);
-vacationFilter.addEventListener("change", updatePanels);
-shiftFilter.addEventListener("change", updatePanels);
+    viewSection.style.display = isView ? "block" : "none";
+    createSection.style.display = isView ? "none" : "block";
+    modeLabel.textContent = isView ? "Vue" : "Création";
 
-/* =========================
-   Render zones
-========================= */
-function renderZones(){
-  zonesLayer.innerHTML = "";
-  editLayer.innerHTML = "";
+    if(isView){
+      stopDrawing(false);
+      editLayer.innerHTML = "";
+    } else {
+      if(!selectedZoneId && state.zones.length) selectedZoneId = state.zones[0].id;
+      syncZoneSelect();
+    }
 
-  for(const z of state.zones){
-    const poly = svgEl("polygon");
-    poly.setAttribute("points", z.points || "");
-    poly.setAttribute("class", "zonePoly" + (z.id === selectedZoneId ? " selected" : ""));
-    poly.addEventListener("click", (e)=>{
-      e.stopPropagation();
-      selectedZoneId = z.id;
-      if(activeTab === "create") syncZoneSelect();
-      renderZones();
-      updatePanels();
-    });
-    zonesLayer.appendChild(poly);
+    renderZones();
+    updatePanels();
   }
 
-  if(activeTab === "create" && selectedZoneId){
+  tabView.addEventListener("click", ()=>setTab("view"));
+  tabCreate.addEventListener("click", ()=>setTab("create"));
+  navVue.addEventListener("click", ()=>setTab("view"));
+  navCreation.addEventListener("click", ()=>setTab("create"));
+
+  deselectBtn.addEventListener("click", ()=>{
+    selectedZoneId = null;
+    stopDrawing(false);
+    renderZones();
+    updatePanels();
+  });
+
+  formationSelect.addEventListener("change", updatePanels);
+  vacationFilter.addEventListener("change", updatePanels);
+  shiftFilter.addEventListener("change", updatePanels);
+
+  /* =========================
+     Import Excel
+  ========================= */
+  clearExcelBtn.addEventListener("click", ()=>{
+    excelFile.value = "";
+    importResult.textContent = "";
+  });
+
+  importExcelBtn.addEventListener("click", async ()=>{
     const zone = getSelectedZone();
-    if(zone && zone.points){
-      const pts = parsePoints(zone.points);
-      pts.forEach((p, idx)=>{
+    if(!zone){
+      alert("Sélectionne une zone d’abord.");
+      return;
+    }
+
+    const file = excelFile.files && excelFile.files[0];
+    if(!file){
+      alert("Choisis un fichier Excel (.xlsx) d’abord.");
+      return;
+    }
+
+    try{
+      const rows = await readExcelFirstSheet(file); // tableau d'objets
+
+      // Injecter une colonne "Zone sélectionné" contenant le nom de la zone (pas l'identifiant)
+      rows.forEach(r => { r["Zone sélectionné"] = zone.name || ""; });
+
+      const { agents, errors } = parseAgentsFromRows(rows);
+
+      // Pour chaque agent, déterminer la zone cible (par nom). Si la colonne Zone est fournie
+      // on tente d'importer dans la zone correspondante; sinon on tombe back sur la zone sélectionnée.
+      let added = 0, updated = 0;
+      for(const a of agents){
+        const key = (a.name || "").trim().toLowerCase();
+        if(!key) continue;
+
+        const targetName = (a.zoneName || "").trim();
+        let targetZone = null;
+        if(targetName){
+          targetZone = state.zones.find(z => String(z.name||"").trim().toLowerCase() === targetName.toLowerCase());
+        }
+        if(!targetZone) targetZone = zone; // fallback sur zone sélectionnée
+
+        targetZone.agents = targetZone.agents || [];
+        const existing = targetZone.agents.find(x => (x.name || "").trim().toLowerCase() === key);
+        if(existing){
+          existing.shift = a.shift;
+          existing.vacation = a.vacation;
+          existing.trainings = a.trainings;
+          updated++;
+        } else {
+          // conserver le nom de la zone dans l'objet agent pour traçabilité
+          a.zoneName = String(targetZone.name || "");
+          targetZone.agents.push(a);
+          added++;
+        }
+      }
+
+      renderAgentsEditor(zone);
+      updatePanels();
+
+      importResult.textContent =
+        `Import Excel terminé : ${added} ajouté(s), ${updated} mis à jour.` +
+        (errors.length ? ` ⚠️ Lignes ignorées : ${errors.length}` : "");
+
+      if(errors.length) console.warn("Import Excel - lignes ignorées:", errors);
+    }catch(err){
+      console.error(err);
+      alert("Erreur import Excel : " + (err?.message || err));
+    }
+  });
+
+  async function readExcelFirstSheet(file){
+    const arrayBuffer = await file.arrayBuffer();
+    const wb = XLSX.read(arrayBuffer, { type: "array" });
+
+    const sheetName = wb.SheetNames[0];
+    if(!sheetName) throw new Error("Le fichier Excel ne contient aucune feuille.");
+
+    const ws = wb.Sheets[sheetName];
+
+    // rows = tableau d'objets basé sur les en-têtes
+    const rows = XLSX.utils.sheet_to_json(ws, {
+      defval: "",   // valeurs vides -> ""
+      raw: false,   // formate (utile si nombres/booleans)
+      blankrows: false
+    });
+
+    if(!rows.length) throw new Error("La feuille 1 est vide.");
+    return rows;
+  }
+
+  function parseAgentsFromRows(rows){
+    // On accepte des variantes d'en-têtes (case-insensitive)
+    // Attendus : Nom agent | Plage horaire | Vacations | GF-SF | EPI | Extincteur
+    const errors = [];
+    const agents = [];
+
+
+    for(let i=0;i<rows.length;i++){
+      const r = rows[i];
+
+      const name = pick(r, ["Nom agent", "Nom", "Agent", "NomAgent"]);
+      const shiftRaw = pick(r, ["Plage horaire", "Horaire", "Shift", "PlageHoraire"]);
+      const vacRaw = pick(r, ["Vacations", "Vacation", "Vac"]);
+
+      const nameS = String(name || "").trim();
+      if(!nameS){
+        errors.push({ row: i+2, reason: "Nom agent vide" }); // +2 car header + 1-index
+        continue;
+      }
+
+      const vacation = normalizeVacation(String(vacRaw || "").trim());
+      const shift = normalizeShift(String(shiftRaw || "").trim());
+
+      const gfsf = pick(r, ["GF-SF", "GFSF", "GF SF"]);
+      const epi  = pick(r, ["EPI"]);
+      const ext  = pick(r, ["Extincteur", "Ext"]);
+
+      const trainings = normalizeTrainings({
+        "GF-SF": parseOuiNon(gfsf),
+        "EPI": parseOuiNon(epi),
+        "Extincteur": parseOuiNon(ext),
+      });
+
+      // Zone indiquée dans la feuille (nom de zone). On accepte plusieurs variantes d'en-tête.
+      const zoneRaw = pick(r, ["Zone", "Zone sélectionné", "Zone selectionne", "ZoneSelection", "ZoneName"]);
+      const zoneName = String(zoneRaw || "").trim();
+
+      const agent = { name: nameS, shift, vacation, trainings };
+      if(zoneName) agent.zoneName = zoneName;
+      agents.push(agent);
+    }
+
+    return { agents, errors };
+  }
+
+  function pick(obj, keys){
+    for(const k of keys){
+      // Recherche exacte
+      if(Object.prototype.hasOwnProperty.call(obj, k)) return obj[k];
+
+      // Recherche insensible à la casse / espaces
+      const nk = normalizeHeader(k);
+      for(const realKey of Object.keys(obj)){
+        if(normalizeHeader(realKey) === nk) return obj[realKey];
+      }
+    }
+    return "";
+  }
+
+  function normalizeVacation(v){
+    const s = String(v||"").trim().toUpperCase();
+    return (s === "A" || s === "B") ? s : "A";
+  }
+
+  function parseOuiNon(v){
+    const s = String(v||"").trim().toUpperCase();
+    if(["OUI","YES","1","TRUE","VRAI","OK","X"].includes(s)) return true;
+    if(["NON","NO","0","FALSE","FAUX",""].includes(s)) return false;
+    return false;
+  }
+
+  function normalizeHeader(h){
+    return String(h||"")
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g," ")
+      .replace(/[’']/g,"'")
+      .replace(/–/g,"-");
+  }
+
+  function normalizeShift(shiftRaw){
+    // On laisse libre (ex: "12h - 20h") mais on harmonise "04h" -> "4h"
+    let s = String(shiftRaw||"").trim();
+    if(!s) return ""; // vide autorisé
+    s = s.replace(/^0?(\d)h/i, "$1h");
+    s = s.replace(/\s+/g," ");
+    return s;
+  }
+
+  /* =========================
+     Render zones
+  ========================= */
+  function renderZones(){
+    zonesLayer.innerHTML = "";
+    editLayer.innerHTML = "";
+
+    for(const z of state.zones){
+      const poly = svgEl("polygon");
+      poly.setAttribute("points", z.points || "");
+      poly.setAttribute("class", "zonePoly" + (z.id === selectedZoneId ? " selected" : ""));
+      poly.addEventListener("click", (e)=>{
+        e.stopPropagation();
+        selectedZoneId = z.id;
+        if(activeTab === "create") syncZoneSelect();
+        renderZones();
+        updatePanels();
+      });
+      zonesLayer.appendChild(poly);
+    }
+
+    if(activeTab === "create" && selectedZoneId){
+      const zone = getSelectedZone();
+      if(zone && zone.points){
+        const pts = parsePoints(zone.points);
+        pts.forEach((p, idx)=>{
+          const c = svgEl("circle");
+          c.setAttribute("cx", p.x);
+          c.setAttribute("cy", p.y);
+          c.setAttribute("r", 7);
+          c.setAttribute("class", "vertex");
+          c.addEventListener("mousedown", (e)=>{
+            e.stopPropagation();
+            draggingVertex = { zoneId: zone.id, index: idx };
+            const svgP = clientToSvg(e.clientX, e.clientY);
+            dragOffset.x = svgP.x - p.x;
+            dragOffset.y = svgP.y - p.y;
+          });
+          editLayer.appendChild(c);
+        });
+      }
+    }
+
+    if(activeTab === "create" && isDrawing){
+      const pl = svgEl("polyline");
+      pl.setAttribute("points", draftPoints.map(p=>`${p.x},${p.y}`).join(" "));
+      pl.setAttribute("fill", "rgba(255,206,86,0.10)");
+      pl.setAttribute("stroke", "rgba(255,152,0,0.95)");
+      pl.setAttribute("stroke-width", "2");
+      editLayer.appendChild(pl);
+
+      draftPoints.forEach((p)=>{
         const c = svgEl("circle");
         c.setAttribute("cx", p.x);
         c.setAttribute("cy", p.y);
-        c.setAttribute("r", 7);
-        c.setAttribute("class", "vertex");
-        c.addEventListener("mousedown", (e)=>{
-          e.stopPropagation();
-          draggingVertex = { zoneId: zone.id, index: idx };
-          const svgP = clientToSvg(e.clientX, e.clientY);
-          dragOffset.x = svgP.x - p.x;
-          dragOffset.y = svgP.y - p.y;
-        });
+        c.setAttribute("r", 6);
+        c.setAttribute("fill", "#fff");
+        c.setAttribute("stroke", "rgba(0,0,0,.35)");
+        c.setAttribute("stroke-width", "1");
         editLayer.appendChild(c);
       });
     }
   }
 
-  if(activeTab === "create" && isDrawing){
-    const pl = svgEl("polyline");
-    pl.setAttribute("points", draftPoints.map(p=>`${p.x},${p.y}`).join(" "));
-    pl.setAttribute("fill", "rgba(255,206,86,0.10)");
-    pl.setAttribute("stroke", "rgba(255,152,0,0.95)");
-    pl.setAttribute("stroke-width", "2");
-    editLayer.appendChild(pl);
-
-    draftPoints.forEach((p)=>{
-      const c = svgEl("circle");
-      c.setAttribute("cx", p.x);
-      c.setAttribute("cy", p.y);
-      c.setAttribute("r", 6);
-      c.setAttribute("fill", "#fff");
-      c.setAttribute("stroke", "rgba(0,0,0,.35)");
-      c.setAttribute("stroke-width", "1");
-      editLayer.appendChild(c);
+  /* =========================
+     Stats
+  ========================= */
+  function computeStats(agents, formation){
+    const total = agents.length;
+    const formed = agents.filter(a => !!(a.trainings && a.trainings[formation])).length;
+    const pct = total === 0 ? 0 : Math.round((formed/total)*100);
+    return { total, formed, pct };
+  }
+  function filterAgents(zoneAgents){
+    const v = vacationFilter.value;
+    const s = shiftFilter.value;
+    return zoneAgents.filter(a=>{
+      const okV = (v === "ALL") || (a.vacation === v);
+      const okS = (s === "ALL") || (a.shift === s);
+      return okV && okS;
     });
   }
-}
 
-/* =========================
-   Stats
-========================= */
-function computeStats(agents, formation){
-  const total = agents.length;
-  const formed = agents.filter(a => !!(a.trainings && a.trainings[formation])).length;
-  const pct = total === 0 ? 0 : Math.round((formed/total)*100);
-  return { total, formed, pct };
-}
-function filterAgents(zoneAgents){
-  const v = vacationFilter.value;
-  const s = shiftFilter.value;
-  return zoneAgents.filter(a=>{
-    const okV = (v === "ALL") || (a.vacation === v);
-    const okS = (s === "ALL") || (a.shift === s);
-    return okV && okS;
-  });
-}
-
-/* =========================
-   View panel
-========================= */
-function updateViewPanel(){
-  const zone = getSelectedZone();
-  if(!zone){
-    emptyView.style.display = "block";
-    viewPanel.style.display = "none";
-    return;
-  }
-  emptyView.style.display = "none";
-  viewPanel.style.display = "block";
-
-  const agents = zone.agents || [];
-  v_zoneName.textContent = zone.name || "(sans nom)";
-  v_zoneCount.textContent = agents.length;
-
-  const formation = formationSelect.value;
-
-  const totalStats = computeStats(agents, formation);
-  v_totalLabel.textContent = `Total (${formation})`;
-  v_totalPct.textContent = `${totalStats.pct}%`;
-  v_totalBar.style.width = `${totalStats.pct}%`;
-  v_totalDetail.textContent = `${totalStats.formed} / ${totalStats.total} agents formés`;
-
-  const filteredAgents = filterAgents(agents);
-  const filtStats = computeStats(filteredAgents, formation);
-  const vacTxt = vacationFilter.value === "ALL" ? "toutes" : vacationFilter.value;
-  const shiftTxt = shiftFilter.value === "ALL" ? "tous" : shiftFilter.value;
-
-  v_filteredLabel.textContent = `Filtré (${formation})`;
-  v_filteredPct.textContent = `${filtStats.pct}%`;
-  v_filteredBar.style.width = `${filtStats.pct}%`;
-  v_filteredDetail.textContent = `${filtStats.formed} / ${filtStats.total} — vacation ${vacTxt}, horaire ${shiftTxt}`;
-
-  v_agentsList.innerHTML = "";
-  agents.forEach(a=>{
-    const box = document.createElement("div");
-    box.className = "agentBox";
-
-    const top = document.createElement("div");
-    top.className = "row";
-    top.innerHTML = `<div style="font-weight:900;">${escapeHtml(a.name)}</div><div class="muted">Vac ${escapeHtml(a.vacation || "-")}</div>`;
-    box.appendChild(top);
-
-    const meta = document.createElement("div");
-    meta.className = "metaLine";
-    meta.innerHTML = `
-      <span class="metaChip"><b>Horaire</b> ${escapeHtml(a.shift || "-")}</span>
-      <span class="metaChip"><b>Vacation</b> ${escapeHtml(a.vacation || "-")}</span>
-    `;
-    box.appendChild(meta);
-
-    const badges = document.createElement("div");
-    badges.className = "badges";
-    formations.forEach(f=>{
-      const ok = !!a.trainings?.[f];
-      const b = document.createElement("div");
-      b.className = "badge";
-      b.textContent = `${f} • ${ok ? "OK" : "Non"}`;
-      badges.appendChild(b);
-    });
-    box.appendChild(badges);
-
-    v_agentsList.appendChild(box);
-  });
-}
-
-/* =========================
-   Creation
-========================= */
-function syncZoneSelect(){
-  zoneSelect.innerHTML = "";
-
-  state.zones.forEach(z=>{
-    const opt = document.createElement("option");
-    opt.value = z.id;
-    opt.textContent = `${z.name || "(sans nom)"} — ${z.id}`;
-    zoneSelect.appendChild(opt);
-  });
-
-  if(state.zones.length === 0){
-    zoneNameInput.value = "";
-    c_agentsList.innerHTML = "";
-    c_agentsEmpty.style.display = "block";
-    drawState.textContent = "Aucune zone. Clique sur “Nouvelle zone”.";
-    return;
-  }
-
-  if(selectedZoneId){
-    zoneSelect.value = selectedZoneId;
-  } else {
-    selectedZoneId = state.zones[0].id;
-    zoneSelect.value = selectedZoneId;
-  }
-  updateCreationFields();
-}
-
-function updateCreationFields(){
-  const zone = getSelectedZone();
-  if(!zone){
-    zoneNameInput.value = "";
-    c_agentsList.innerHTML = "";
-    c_agentsEmpty.style.display = "block";
-    return;
-  }
-  c_agentsEmpty.style.display = "none";
-  zoneNameInput.value = zone.name || "";
-  renderAgentsEditor(zone);
-  updateDrawStateText();
-}
-
-zoneSelect.addEventListener("change", ()=>{
-  selectedZoneId = zoneSelect.value;
-  stopDrawing(false);
-  renderZones();
-  updateCreationFields();
-  updatePanels();
-});
-
-zoneNameInput.addEventListener("input", ()=>{
-  const zone = getSelectedZone();
-  if(!zone) return;
-  zone.name = zoneNameInput.value.trim();
-  syncZoneSelect();
-  renderZones();
-  updatePanels();
-});
-
-newZoneBtn.addEventListener("click", ()=>{
-  const name = prompt("Nom de la nouvelle zone ?");
-  if(!name) return;
-  const id = "Z" + Math.random().toString(16).slice(2,7).toUpperCase();
-  state.zones.push({ id, name: name.trim(), points:"", agents:[] });
-  selectedZoneId = id;
-  syncZoneSelect();
-  renderZones();
-  updatePanels();
-});
-
-deleteZoneBtn.addEventListener("click", ()=>{
-  const zone = getSelectedZone();
-  if(!zone) return;
-  if(!confirm(`Supprimer la zone "${zone.name}" ?`)) return;
-  state.zones = state.zones.filter(z=>z.id !== zone.id);
-  selectedZoneId = state.zones.length ? state.zones[0].id : null;
-  stopDrawing(false);
-  renderZones();
-  syncZoneSelect();
-  updatePanels();
-});
-
-exportJsonBtn.addEventListener("click", ()=>{
-  const exportZones = state.zones.map(z => ({
-    id: z.id,
-    name: z.name,
-    points: z.points,
-    agents: z.agents
-  }));
-  downloadJson(exportZones, "Zone.json");
-});
-
-/* Drawing */
-startDrawBtn.addEventListener("click", ()=>{
-  if(!selectedZoneId){ alert("Sélectionne une zone d’abord."); return; }
-  isDrawing = true;
-  draftPoints = [];
-  updateDrawStateText();
-  renderZones();
-});
-finishDrawBtn.addEventListener("click", ()=> stopDrawing(true));
-
-function stopDrawing(apply){
-  if(!isDrawing) return;
-  const zone = getSelectedZone();
-  if(apply){
-    if(draftPoints.length < 3){
-      alert("Il faut au moins 3 points pour un polygone.");
+  /* =========================
+     View panel
+  ========================= */
+  function updateViewPanel(){
+    const zone = getSelectedZone();
+    if(!zone){
+      emptyView.style.display = "block";
+      viewPanel.style.display = "none";
       return;
     }
-    zone.points = draftPoints.map(p=>`${Math.round(p.x)},${Math.round(p.y)}`).join(" ");
-  }
-  isDrawing = false;
-  draftPoints = [];
-  updateDrawStateText();
-  renderZones();
-}
-function updateDrawStateText(){
-  if(activeTab !== "create"){ drawState.textContent = ""; return; }
-  if(isDrawing){
-    drawState.innerHTML = `Mode dessin : <b>${draftPoints.length}</b> points. Clique pour ajouter, puis <b>Terminer</b>.`;
-  } else {
-    drawState.textContent = selectedZoneId ? "Tu peux déplacer les points du polygone en les glissant." : "Aucune zone sélectionnée.";
-  }
-}
+    emptyView.style.display = "none";
+    viewPanel.style.display = "block";
 
-mapSvg.addEventListener("click", (e)=>{
-  if(activeTab !== "create" || !isDrawing) return;
-  const p = clientToSvg(e.clientX, e.clientY);
-  draftPoints.push({ x: p.x, y: p.y });
-  renderZones();
-  updateDrawStateText();
-});
+    const agents = zone.agents || [];
+    v_zoneName.textContent = zone.name || "(sans nom)";
+    v_zoneCount.textContent = agents.length;
 
-/* Vertex drag */
-window.addEventListener("mousemove", (e)=>{
-  if(activeTab !== "create" || !draggingVertex) return;
-  const zone = state.zones.find(z=>z.id === draggingVertex.zoneId);
-  if(!zone) return;
+    const formation = formationSelect.value;
 
-  const pts = parsePoints(zone.points);
-  const p = clientToSvg(e.clientX, e.clientY);
-  const idx = draggingVertex.index;
+    const totalStats = computeStats(agents, formation);
+    v_totalLabel.textContent = `Total (${formation})`;
+    v_totalPct.textContent = `${totalStats.pct}%`;
+    v_totalBar.style.width = `${totalStats.pct}%`;
+    v_totalDetail.textContent = `${totalStats.formed} / ${totalStats.total} agents formés`;
 
-  pts[idx] = { x: p.x - dragOffset.x, y: p.y - dragOffset.y };
-  zone.points = pts.map(pp=>`${Math.round(pp.x)},${Math.round(pp.y)}`).join(" ");
-  renderZones();
-  updatePanels();
-});
-window.addEventListener("mouseup", ()=>{
-  if(!draggingVertex) return;
-  draggingVertex = null;
-  renderZones();
-});
+    const filteredAgents = filterAgents(agents);
+    const filtStats = computeStats(filteredAgents, formation);
+    const vacTxt = vacationFilter.value === "ALL" ? "toutes" : vacationFilter.value;
+    const shiftTxt = shiftFilter.value === "ALL" ? "tous" : shiftFilter.value;
 
-/* Agents */
-addAgentBtn.addEventListener("click", ()=>{
-  const zone = getSelectedZone();
-  if(!zone){ alert("Sélectionne une zone."); return; }
-  const name = prompt("Nom de l’agent ?");
-  if(!name) return;
+    v_filteredLabel.textContent = `Filtré (${formation})`;
+    v_filteredPct.textContent = `${filtStats.pct}%`;
+    v_filteredBar.style.width = `${filtStats.pct}%`;
+    v_filteredDetail.textContent = `${filtStats.formed} / ${filtStats.total} — vacation ${vacTxt}, horaire ${shiftTxt}`;
 
-  zone.agents = zone.agents || [];
-  zone.agents.push({
-    name: name.trim(),
-    shift: shifts[1],
-    vacation: "A",
-    trainings: normalizeTrainings({})
-  });
-  renderAgentsEditor(zone);
-  updatePanels();
-});
+    v_agentsList.innerHTML = "";
+    agents.forEach(a=>{
+      const box = document.createElement("div");
+      box.className = "agentBox";
 
-function renderAgentsEditor(zone){
-  c_agentsList.innerHTML = "";
-  (zone.agents || []).forEach((agent, idx)=>{
-    const box = document.createElement("div");
-    box.className = "agentBox";
+      const top = document.createElement("div");
+      top.className = "row";
+      top.innerHTML = `<div style="font-weight:900;">${escapeHtml(a.name)}</div><div class="muted">Vac ${escapeHtml(a.vacation || "-")}</div>`;
+      box.appendChild(top);
 
-    const top = document.createElement("div");
-    top.className = "row";
-    top.innerHTML = `
-      <div style="font-weight:900;">${escapeHtml(agent.name || "")}</div>
-      <button class="danger" data-remove="${idx}" style="padding:6px 10px;border-radius:10px;">Supprimer</button>
-    `;
-    box.appendChild(top);
-
-    const nameRow = document.createElement("div");
-    nameRow.className = "row";
-    nameRow.innerHTML = `
-      <div class="muted">Nom</div>
-      <input value="${escapeAttr(agent.name || "")}" data-name-input="${idx}" style="width:60%;"/>
-    `;
-    box.appendChild(nameRow);
-
-    const shiftRow = document.createElement("div");
-    shiftRow.className = "row";
-    shiftRow.innerHTML = `
-      <div class="muted">Horaire</div>
-      <select data-shift-select="${idx}" style="width:60%;">
-        ${shifts.map(s => `<option value="${escapeAttr(s)}" ${agent.shift===s?"selected":""}>${escapeHtml(s)}</option>`).join("")}
-      </select>
-    `;
-    box.appendChild(shiftRow);
-
-    const vacRow = document.createElement("div");
-    vacRow.className = "row";
-    vacRow.innerHTML = `
-      <div class="muted">Vacation</div>
-      <select data-vac-select="${idx}" style="width:60%;">
-        ${["A","B"].map(v => `<option value="${v}" ${agent.vacation===v?"selected":""}>${v}</option>`).join("")}
-      </select>
-    `;
-    box.appendChild(vacRow);
-
-    const badges = document.createElement("div");
-    badges.className = "badges";
-    formations.forEach(f=>{
-      const checked = agent.trainings?.[f] ? "checked" : "";
-      const lab = document.createElement("label");
-      lab.className = "badge";
-      lab.innerHTML = `
-        <input type="checkbox" data-agent="${idx}" data-formation="${f}" ${checked}/>
-        <span>${f}</span>
+      const meta = document.createElement("div");
+      meta.className = "metaLine";
+      meta.innerHTML = `
+        <span class="metaChip"><b>Horaire</b> ${escapeHtml(a.shift || "-")}</span>
+        <span class="metaChip"><b>Vacation</b> ${escapeHtml(a.vacation || "-")}</span>
       `;
-      badges.appendChild(lab);
-    });
-    box.appendChild(badges);
+      box.appendChild(meta);
 
-    c_agentsList.appendChild(box);
+      const badges = document.createElement("div");
+      badges.className = "badges";
+      formations.forEach(f=>{
+        const ok = !!a.trainings?.[f];
+        const b = document.createElement("div");
+        b.className = "badge";
+        b.textContent = `${f} • ${ok ? "OK" : "Non"}`;
+        badges.appendChild(b);
+      });
+      box.appendChild(badges);
+
+      v_agentsList.appendChild(box);
+    });
+  }
+
+  /* =========================
+     Creation
+  ========================= */
+  function syncZoneSelect(){
+    zoneSelect.innerHTML = "";
+
+    state.zones.forEach(z=>{
+      const opt = document.createElement("option");
+      opt.value = z.id;
+      opt.textContent = `${z.name || "(sans nom)"} — ${z.id}`;
+      zoneSelect.appendChild(opt);
+    });
+
+    if(state.zones.length === 0){
+      zoneNameInput.value = "";
+      c_agentsList.innerHTML = "";
+      c_agentsEmpty.style.display = "block";
+      drawState.textContent = "Aucune zone. Clique sur “Nouvelle zone”.";
+      return;
+    }
+
+    if(selectedZoneId){
+      zoneSelect.value = selectedZoneId;
+    } else {
+      selectedZoneId = state.zones[0].id;
+      zoneSelect.value = selectedZoneId;
+    }
+    updateCreationFields();
+  }
+
+  function updateCreationFields(){
+    const zone = getSelectedZone();
+    if(!zone){
+      zoneNameInput.value = "";
+      c_agentsList.innerHTML = "";
+      c_agentsEmpty.style.display = "block";
+      return;
+    }
+    c_agentsEmpty.style.display = "none";
+    zoneNameInput.value = zone.name || "";
+    renderAgentsEditor(zone);
+    updateDrawStateText();
+  }
+
+  zoneSelect.addEventListener("change", ()=>{
+    selectedZoneId = zoneSelect.value;
+    stopDrawing(false);
+    renderZones();
+    updateCreationFields();
+    updatePanels();
   });
 
-  c_agentsList.querySelectorAll('input[type="checkbox"]').forEach(cb=>{
-    cb.addEventListener("change", (e)=>{
-      const zone = getSelectedZone();
-      const idx = Number(e.target.dataset.agent);
-      const f = e.target.dataset.formation;
-      zone.agents[idx].trainings[f] = e.target.checked;
+  zoneNameInput.addEventListener("input", ()=>{
+    const zone = getSelectedZone();
+    if(!zone) return;
+    zone.name = zoneNameInput.value.trim();
+    syncZoneSelect();
+    renderZones();
+    updatePanels();
+  });
+
+  newZoneBtn.addEventListener("click", ()=>{
+    const name = prompt("Nom de la nouvelle zone ?");
+    if(!name) return;
+    const id = "Z" + Math.random().toString(16).slice(2,7).toUpperCase();
+    state.zones.push({ id, name: name.trim(), points:"", agents:[] });
+    selectedZoneId = id;
+    syncZoneSelect();
+    renderZones();
+    updatePanels();
+  });
+
+  deleteZoneBtn.addEventListener("click", ()=>{
+    const zone = getSelectedZone();
+    if(!zone) return;
+    if(!confirm(`Supprimer la zone "${zone.name}" ?`)) return;
+    state.zones = state.zones.filter(z=>z.id !== zone.id);
+    selectedZoneId = state.zones.length ? state.zones[0].id : null;
+    stopDrawing(false);
+    renderZones();
+    syncZoneSelect();
+    updatePanels();
+  });
+
+  exportJsonBtn.addEventListener("click", ()=>{
+    const exportZones = state.zones.map(z => ({
+      id: z.id,
+      name: z.name,
+      points: z.points,
+      agents: z.agents
+    }));
+    downloadJson(exportZones, "Zone.json");
+  });
+
+  /* Drawing */
+  startDrawBtn.addEventListener("click", ()=>{
+    if(!selectedZoneId){ alert("Sélectionne une zone d’abord."); return; }
+    isDrawing = true;
+    draftPoints = [];
+    updateDrawStateText();
+    renderZones();
+  });
+  finishDrawBtn.addEventListener("click", ()=> stopDrawing(true));
+
+  function stopDrawing(apply){
+    if(!isDrawing) return;
+    const zone = getSelectedZone();
+    if(apply){
+      if(draftPoints.length < 3){
+        alert("Il faut au moins 3 points pour un polygone.");
+        return;
+      }
+      zone.points = draftPoints.map(p=>`${Math.round(p.x)},${Math.round(p.y)}`).join(" ");
+    }
+    isDrawing = false;
+    draftPoints = [];
+    updateDrawStateText();
+    renderZones();
+  }
+  function updateDrawStateText(){
+    if(activeTab !== "create"){ drawState.textContent = ""; return; }
+    if(isDrawing){
+      drawState.innerHTML = `Mode dessin : <b>${draftPoints.length}</b> points. Clique pour ajouter, puis <b>Terminer</b>.`;
+    } else {
+      drawState.textContent = selectedZoneId ? "Tu peux déplacer les points du polygone en les glissant." : "Aucune zone sélectionnée.";
+    }
+  }
+
+  mapSvg.addEventListener("click", (e)=>{
+    if(activeTab !== "create" || !isDrawing) return;
+    const p = clientToSvg(e.clientX, e.clientY);
+    draftPoints.push({ x: p.x, y: p.y });
+    renderZones();
+    updateDrawStateText();
+  });
+
+  window.addEventListener("mousemove", (e)=>{
+    if(activeTab !== "create" || !draggingVertex) return;
+    const zone = state.zones.find(z=>z.id === draggingVertex.zoneId);
+    if(!zone) return;
+
+    const pts = parsePoints(zone.points);
+    const p = clientToSvg(e.clientX, e.clientY);
+    const idx = draggingVertex.index;
+
+    pts[idx] = { x: p.x - dragOffset.x, y: p.y - dragOffset.y };
+    zone.points = pts.map(pp=>`${Math.round(pp.x)},${Math.round(pp.y)}`).join(" ");
+    renderZones();
+    updatePanels();
+  });
+  window.addEventListener("mouseup", ()=>{
+    if(!draggingVertex) return;
+    draggingVertex = null;
+    renderZones();
+  });
+
+  /* Agents manual add */
+  addAgentBtn.addEventListener("click", ()=>{
+    const zone = getSelectedZone();
+    if(!zone){ alert("Sélectionne une zone."); return; }
+    const name = prompt("Nom de l’agent ?");
+    if(!name) return;
+
+    zone.agents = zone.agents || [];
+    zone.agents.push({
+      name: name.trim(),
+      shift: "",
+      vacation: "A",
+      trainings: normalizeTrainings({})
+    });
+    renderAgentsEditor(zone);
+    updatePanels();
+  });
+
+  function renderAgentsEditor(zone){
+    c_agentsList.innerHTML = "";
+    (zone.agents || []).forEach((agent, idx)=>{
+      const box = document.createElement("div");
+      box.className = "agentBox";
+
+      const top = document.createElement("div");
+      top.className = "row";
+      top.innerHTML = `
+        <div style="font-weight:900;">${escapeHtml(agent.name || "")}</div>
+        <button class="danger" data-remove="${idx}" style="padding:6px 10px;border-radius:10px;">Supprimer</button>
+      `;
+      box.appendChild(top);
+
+      const nameRow = document.createElement("div");
+      nameRow.className = "row";
+      nameRow.innerHTML = `
+        <div class="muted">Nom</div>
+        <input value="${escapeAttr(agent.name || "")}" data-name-input="${idx}" style="width:60%;"/>
+      `;
+      box.appendChild(nameRow);
+
+      const shiftRow = document.createElement("div");
+      shiftRow.className = "row";
+      shiftRow.innerHTML = `
+        <div class="muted">Horaire</div>
+        <input value="${escapeAttr(agent.shift || "")}" data-shift-input="${idx}" style="width:60%;" placeholder="ex: 04h - 12h"/>
+      `;
+      box.appendChild(shiftRow);
+
+      const vacRow = document.createElement("div");
+      vacRow.className = "row";
+      vacRow.innerHTML = `
+        <div class="muted">Vacation</div>
+        <select data-vac-select="${idx}" style="width:60%;">
+          ${["A","B"].map(v => `<option value="${v}" ${agent.vacation===v?"selected":""}>${v}</option>`).join("")}
+        </select>
+      `;
+      box.appendChild(vacRow);
+
+      const badges = document.createElement("div");
+      badges.className = "badges";
+      formations.forEach(f=>{
+        const checked = agent.trainings?.[f] ? "checked" : "";
+        const lab = document.createElement("label");
+        lab.className = "badge";
+        lab.innerHTML = `
+          <input type="checkbox" data-agent="${idx}" data-formation="${f}" ${checked}/>
+          <span>${f}</span>
+        `;
+        badges.appendChild(lab);
+      });
+      box.appendChild(badges);
+
+      c_agentsList.appendChild(box);
+    });
+
+    c_agentsList.querySelectorAll('input[type="checkbox"]').forEach(cb=>{
+      cb.addEventListener("change", (e)=>{
+        const zone = getSelectedZone();
+        const idx = Number(e.target.dataset.agent);
+        const f = e.target.dataset.formation;
+        zone.agents[idx].trainings[f] = e.target.checked;
+        updatePanels();
+      });
+    });
+    c_agentsList.querySelectorAll('input[data-name-input]').forEach(inp=>{
+      inp.addEventListener("input", (e)=>{
+        const zone = getSelectedZone();
+        const idx = Number(e.target.dataset.nameInput);
+        zone.agents[idx].name = e.target.value;
+        updatePanels();
+      });
+    });
+    c_agentsList.querySelectorAll('input[data-shift-input]').forEach(inp=>{
+      inp.addEventListener("input", (e)=>{
+        const zone = getSelectedZone();
+        const idx = Number(e.target.dataset.shiftInput);
+        zone.agents[idx].shift = e.target.value;
+        updatePanels();
+      });
+    });
+    c_agentsList.querySelectorAll('select[data-vac-select]').forEach(sel=>{
+      sel.addEventListener("change", (e)=>{
+        const zone = getSelectedZone();
+        const idx = Number(e.target.dataset.vacSelect);
+        zone.agents[idx].vacation = e.target.value;
+        updatePanels();
+      });
+    });
+    c_agentsList.querySelectorAll('button[data-remove]').forEach(btn=>{
+      btn.addEventListener("click", ()=>{
+        const zone = getSelectedZone();
+        const idx = Number(btn.dataset.remove);
+        zone.agents.splice(idx,1);
+        renderAgentsEditor(zone);
+        updatePanels();
+      });
+    });
+  }
+
+  /* =========================
+     Helpers
+  ========================= */
+  function updatePanels(){
+    updateViewPanel();
+    if(activeTab === "create") updateCreationFields();
+  }
+  function getSelectedZone(){ return state.zones.find(z=>z.id === selectedZoneId) || null; }
+  function svgEl(tag){ return document.createElementNS("http://www.w3.org/2000/svg", tag); }
+
+  function parsePoints(pointsStr){
+    if(!pointsStr) return [];
+    return pointsStr.trim().split(/\s+/).map(pair=>{
+      const [x,y] = pair.split(",").map(Number);
+      return { x, y };
+    }).filter(p => Number.isFinite(p.x) && Number.isFinite(p.y));
+  }
+  function clientToSvg(clientX, clientY){
+    const pt = mapSvg.createSVGPoint();
+    pt.x = clientX; pt.y = clientY;
+    const ctm = mapSvg.getScreenCTM();
+    if(!ctm) return {x:0,y:0};
+    const inv = ctm.inverse();
+    const svgP = pt.matrixTransform(inv);
+    return { x: svgP.x, y: svgP.y };
+  }
+
+  function normalizeTrainings(t){
+    const obj = {};
+    for(const f of formations) obj[f] = !!t[f];
+    return obj;
+  }
+  function downloadJson(data, filename){
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
+  function escapeHtml(str){
+    return String(str ?? "").replace(/[&<>"']/g, s => ({
+      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
+    }[s]));
+  }
+  function escapeAttr(str){ return String(str ?? "").replace(/"/g, "&quot;"); }
+
+  /* =========================
+     Init + import automatique de Liste Agents.xlsx
+  ========================= */
+  async function loadDefaultExcelOnStartup(){
+    try{
+      const res = await fetch("Liste Agents.xlsx?ts="+Date.now(), { cache: "no-store" });
+      if(!res.ok){
+        loadStatusText.textContent += " — Aucun fichier Liste Agents.xlsx trouvé.";
+        return;
+      }
+
+      const arrayBuffer = await res.arrayBuffer();
+      const wb = XLSX.read(arrayBuffer, { type: "array" });
+      const sheetName = wb.SheetNames[0];
+      if(!sheetName){ loadStatusText.textContent += " — Liste Agents.xlsx sans feuille."; return; }
+      const ws = wb.Sheets[sheetName];
+
+      const rows = XLSX.utils.sheet_to_json(ws, { defval: "", raw: false, blankrows: false });
+      if(!rows.length){ loadStatusText.textContent += " — Feuille vide."; return; }
+
+      const { agents, errors } = parseAgentsFromRows(rows);
+
+      let added = 0;
+      for(const a of agents){
+        const zoneName = (a.zoneName || "").trim();
+        let targetZone = null;
+        if(zoneName){
+          targetZone = state.zones.find(z => String(z.name||"").trim().toLowerCase() === zoneName.toLowerCase());
+        }
+        if(!targetZone){
+          // fallback sur la première zone existante, sinon créer une zone importée
+          if(state.zones.length) targetZone = state.zones[0];
+          else { const id = "Z_IMP"; targetZone = { id, name: "Imported", points: "", agents: [] }; state.zones.push(targetZone); }
+        }
+
+        targetZone.agents = targetZone.agents || [];
+        const key = (a.name || "").trim().toLowerCase();
+        const existing = targetZone.agents.find(x => (x.name||"").trim().toLowerCase() === key);
+        if(existing){
+          existing.shift = a.shift;
+          existing.vacation = a.vacation;
+          existing.trainings = a.trainings;
+        } else {
+          targetZone.agents.push(a);
+          added++;
+        }
+      }
+
+      loadStatusText.textContent = `Zone.json chargé : ${state.zones.length} zone(s). Import automatique : ${added} ajouté(s)` + (errors.length ? ` ⚠️ ${errors.length} lignes ignorées` : "");
+      renderZones();
+      syncZoneSelect();
       updatePanels();
-    });
-  });
-  c_agentsList.querySelectorAll('input[data-name-input]').forEach(inp=>{
-    inp.addEventListener("input", (e)=>{
-      const zone = getSelectedZone();
-      const idx = Number(e.target.dataset.nameInput);
-      zone.agents[idx].name = e.target.value;
-      updatePanels();
-    });
-  });
-  c_agentsList.querySelectorAll('select[data-shift-select]').forEach(sel=>{
-    sel.addEventListener("change", (e)=>{
-      const zone = getSelectedZone();
-      const idx = Number(e.target.dataset.shiftSelect);
-      zone.agents[idx].shift = e.target.value;
-      updatePanels();
-    });
-  });
-  c_agentsList.querySelectorAll('select[data-vac-select]').forEach(sel=>{
-    sel.addEventListener("change", (e)=>{
-      const zone = getSelectedZone();
-      const idx = Number(e.target.dataset.vacSelect);
-      zone.agents[idx].vacation = e.target.value;
-      updatePanels();
-    });
-  });
-  c_agentsList.querySelectorAll('button[data-remove]').forEach(btn=>{
-    btn.addEventListener("click", ()=>{
-      const zone = getSelectedZone();
-      const idx = Number(btn.dataset.remove);
-      zone.agents.splice(idx,1);
-      renderAgentsEditor(zone);
-      updatePanels();
-    });
-  });
-}
+    }catch(e){
+      console.warn(e);
+      loadStatusText.textContent += " — Import automatique échoué: " + (e?.message || e);
+    }
+  }
 
-/* Panels */
-function updatePanels(){
-  updateViewPanel();
-  if(activeTab === "create") updateCreationFields();
-}
-
-/* Helpers */
-function getSelectedZone(){ return state.zones.find(z=>z.id === selectedZoneId) || null; }
-function svgEl(tag){ return document.createElementNS("http://www.w3.org/2000/svg", tag); }
-
-function parsePoints(pointsStr){
-  if(!pointsStr) return [];
-  return pointsStr.trim().split(/\s+/).map(pair=>{
-    const [x,y] = pair.split(",").map(Number);
-    return { x, y };
-  }).filter(p => Number.isFinite(p.x) && Number.isFinite(p.y));
-}
-function clientToSvg(clientX, clientY){
-  const pt = mapSvg.createSVGPoint();
-  pt.x = clientX; pt.y = clientY;
-  const ctm = mapSvg.getScreenCTM();
-  if(!ctm) return {x:0,y:0};
-  const inv = ctm.inverse();
-  const svgP = pt.matrixTransform(inv);
-  return { x: svgP.x, y: svgP.y };
-}
-
-function normalizeTrainings(t){
-  const obj = {};
-  for(const f of formations) obj[f] = !!t[f];
-  return obj;
-}
-function downloadJson(data, filename){
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  URL.revokeObjectURL(url);
-}
-function escapeHtml(str){
-  return String(str ?? "").replace(/[&<>"']/g, s => ({
-    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
-  }[s]));
-}
-function escapeAttr(str){ return String(str ?? "").replace(/"/g, "&quot;"); }
-
-/* Init */
-function init(){
-  setTab("view");
-  emptyView.style.display = "block";
-  viewPanel.style.display = "none";
-  loadZonesJson();
-}
-init();
-</script>
+  async function init(){
+    setTab("view");
+    emptyView.style.display = "block";
+    viewPanel.style.display = "none";
+    await loadZonesJson();
+    await loadDefaultExcelOnStartup();
+  }
+  init();
+  </script>
 </body>
 </html>
