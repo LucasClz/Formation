@@ -457,6 +457,76 @@
     updateViewPanel();
   }
 
+  /* =========================
+     Load Liste Agents.xlsx (optional)
+     If present, merge agents into `state.zones` (match by zone name).
+  ========================= */
+  function isTruthyExcel(val){
+    if(val === true || val === 1) return true;
+    if(typeof val === 'string'){
+      const s = val.trim().toLowerCase();
+      return s === 'oui' || s === 'ok' || s === 'true' || s === '1' || s === 'x' || s === 'yes' || s === 'y';
+    }
+    return false;
+  }
+
+  async function loadAgentsExcel(){
+    try{
+      const res = await fetch("Liste Agents.xlsx?ts=" + Date.now(), { cache: 'no-store' });
+      if(!res.ok) return; // pas de fichier — rien à faire
+      const ab = await res.arrayBuffer();
+      const wb = XLSX.read(ab, { type: 'array' });
+      if(!wb.SheetNames || wb.SheetNames.length === 0) return;
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(ws, { defval: '' });
+
+      rows.forEach(row => {
+        const name = row['name'] || row['Name'] || row['Nom'] || row['Nom agent'] || row['Agent'] || '';
+        const zoneName = row['zone'] || row['Zone'] || row['ZoneNom'] || row['Zone nom'] || '';
+        const shift = row['shift'] || row['Shift'] || row['Horaire'] || '';
+        const vacationRaw = row['vacation'] || row['Vacation'] || row['Vac'] || row['Vacationne'] || '';
+        const unit = row['unit'] || row['Unit'] || row['Unité'] || row['Unite'] || '';
+
+        if(!name) return; // ligne sans nom — on ignore
+
+        const vacation = (String(vacationRaw).toUpperCase() === 'B') ? 'B' : 'A';
+
+        // Trainings: check known formation columns
+        const trainings = {};
+        for(const f of formations){
+          const v = row[f] || row[f.replace('-', ' ')] || row[f.toLowerCase()] || row[f.toUpperCase()] || '';
+          trainings[f] = isTruthyExcel(v);
+        }
+
+        // Find or create zone
+        let zIdx = state.zones.findIndex(z => String(z.name || '').trim().toLowerCase() === String(zoneName || '').trim().toLowerCase());
+        if(zIdx === -1){
+          state.zones.push({ name: zoneName || '(sans nom)', polygons: [], unit: unit || null, agents: [] });
+          zIdx = state.zones.length - 1;
+        }
+
+        const agents = state.zones[zIdx].agents || [];
+        const existing = agents.find(a => String(a.name || '').trim().toLowerCase() === String(name || '').trim().toLowerCase());
+        if(!existing){
+          agents.push({ name: String(name), shift: String(shift), vacation: vacation, trainings: normalizeTrainings(trainings), unit: unit || null });
+        } else {
+          existing.shift = String(shift) || existing.shift;
+          existing.vacation = vacation || existing.vacation;
+          existing.unit = unit || existing.unit;
+          existing.trainings = Object.assign({}, existing.trainings || {}, normalizeTrainings(trainings));
+        }
+        state.zones[zIdx].agents = agents;
+      });
+
+      // Refresh UI after merge
+      renderZones();
+      syncViewZoneSelect();
+      updateViewPanel();
+    }catch(e){
+      console.warn('Erreur lecture Liste Agents.xlsx', e);
+    }
+  }
+
   function syncViewZoneSelect(){
     if(!viewZoneSelect) return;
     viewZoneSelect.innerHTML = "";
@@ -536,19 +606,6 @@
         
         zonesLayer.appendChild(poly);
       });
-      
-      // Add zone label with agent count
-      if(polygons.length > 0 && minX !== Infinity){
-        const centerX = (minX + maxX) / 2;
-        const centerY = (minY + maxY) / 2;
-        const agentCount = z.agents ? z.agents.length : 0;
-        const label = svgEl("text");
-        label.setAttribute("x", centerX);
-        label.setAttribute("y", centerY);
-        label.setAttribute("class", "zoneLabel");
-        label.textContent = agentCount;
-        zonesLayer.appendChild(label);
-      }
     }
   }
 
@@ -705,6 +762,8 @@
     emptyView.style.display = "block";
     viewPanel.style.display = "none";
     await loadZonesJson();
+    // try to load a complementary Excel with agents (optional)
+    await loadAgentsExcel();
   }
   init();
   </script>
