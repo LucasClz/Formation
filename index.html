@@ -955,20 +955,6 @@
           maxY = Math.max(maxY, p.y);
         });
       });
-      
-      // Ajouter label avec nombre d'agents au centre
-      if(polygons.length > 0 && minX !== Infinity){
-        const centerX = (minX + maxX) / 2;
-        const centerY = (minY + maxY) / 2;
-        const agentCount = z.agents ? z.agents.length : 0;
-        
-        const label = svgEl("text");
-        label.setAttribute("x", centerX);
-        label.setAttribute("y", centerY);
-        label.setAttribute("class", "zoneLabel");
-        label.textContent = agentCount;
-        zonesLayer.appendChild(label);
-      }
     }
 
     if(activeTab === "create" && selectedZoneIndex !== null){
