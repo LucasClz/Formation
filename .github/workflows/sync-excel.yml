@@ -1,0 +1,45 @@
+name: Sync Excel from SharePoint
+
+on:
+  schedule:
+    - cron: '0 8 * * *'
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      - name: Install dependencies
+        run: |
+          pip install requests openpyxl
+      
+      - name: Download Excel from SharePoint
+        run: |
+          python3 << 'EOF'
+          import requests
+          import os
+          
+          url = "https://sncf.sharepoint.com/:x:/r/sites/Technicentre_Charentes_PerigordGrpO365/ENVIRONNEMENT/00%20-%20HIND%20-%20LUCAS/16%20-%20Logiciel%20Lucas/Liste%20Agents.xlsx?d=w8729f3c06e244e5d9824b0f49d34d16d&csf=1&web=1&e=czQWCu&download=1"
+          
+          response = requests.get(url, timeout=30)
+          if response.status_code == 200:
+              with open("Liste Agents.xlsx", "wb") as f:
+                  f.write(response.content)
+              print("✓ Fichier téléchargé avec succès")
+          else:
+              print(f"✗ Erreur: {response.status_code}")
+          EOF
+      
+      - name: Commit changes
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add "Liste Agents.xlsx"
+          git diff --quiet && git diff --staged --quiet || (git commit -m "🔄 Synchronisation automatique du fichier Excel depuis SharePoint" && git push)
