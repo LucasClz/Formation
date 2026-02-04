@@ -1,0 +1,66 @@
+name: Sync Excel from SharePoint
+
+on:
+  schedule:
+    # Exécute chaque jour à 08:00 UTC
+    - cron: '0 8 * * *'
+  # Permet aussi un déclenchement manuel
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      - name: Install dependencies
+        run: |
+          pip install requests openpyxl
+      
+      - name: Download Excel from SharePoint
+        run: |
+          python3 << 'EOF'
+          import requests
+          import os
+          
+          # URL du fichier Excel sur SharePoint
+          sharepoint_url = "https://sncf.sharepoint.com/:x:/r/sites/Technicentre_Charentes_PerigordGrpO365/ENVIRONNEMENT/00%20-%20HIND%20-%20LUCAS/16%20-%20Logiciel%20Lucas/Liste%20Agents.xlsx?d=w8729f3c06e244e5d9824b0f49d34d16d&csf=1&web=1&e=czQWCu&download=1"
+          
+          try:
+              # Télécharger le fichier
+              response = requests.get(sharepoint_url, timeout=30)
+              
+              if response.status_code == 200:
+                  # Sauvegarder le fichier
+                  with open('Liste Agents.xlsx', 'wb') as f:
+                      f.write(response.content)
+                  print("✓ Fichier Excel téléchargé avec succès")
+              else:
+                  print(f"✗ Erreur SharePoint: {response.status_code}")
+                  print("Note: Vérifier que l'URL est accessible sans authentification")
+          except Exception as e:
+              print(f"✗ Erreur lors du téléchargement: {e}")
+              print("Note: Si l'authentification est requise, utiliser un Personal Access Token")
+          EOF
+      
+      - name: Commit and push if changed
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          
+          if git diff --quiet Liste\ Agents.xlsx; then
+            echo "Aucun changement détecté"
+          else
+            git add "Liste Agents.xlsx"
+            git commit -m "🔄 Synchronisation automatique du fichier Excel depuis SharePoint"
+            git push
+          fi
