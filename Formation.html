@@ -181,6 +181,14 @@
       0%{ stroke-width:6; opacity:0.7; }
       100%{ stroke-width:2; opacity:1; }
     }
+    .zoneLabel{
+      font-size:14px;
+      font-weight:900;
+      fill:#fff;
+      text-anchor:middle;
+      pointer-events:none;
+      text-shadow: 0 1px 3px rgba(0,0,0,.5);
+    }
 
     /* Panel */
     .panel{
@@ -500,6 +508,7 @@
       const isSelected = i === selectedZoneIndex;
       
       // Afficher tous les polygones de la zone
+      let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
       polygons.forEach((pointsStr)=>{
         const poly = svgEl("polygon");
         poly.setAttribute("points", pointsStr || "");
@@ -510,8 +519,36 @@
           renderZones();
           updateViewPanel();
         });
+        
+        // Calculate bounding box for zone label positioning
+        if(pointsStr){
+          const pts = pointsStr.split(/[\s,]+/).map(Number).filter(n => !isNaN(n));
+          for(let j=0; j<pts.length; j+=2){
+            const x = pts[j], y = pts[j+1];
+            if(isFinite(x) && isFinite(y)){
+              minX = Math.min(minX, x);
+              maxX = Math.max(maxX, x);
+              minY = Math.min(minY, y);
+              maxY = Math.max(maxY, y);
+            }
+          }
+        }
+        
         zonesLayer.appendChild(poly);
       });
+      
+      // Add zone label with agent count
+      if(polygons.length > 0 && minX !== Infinity){
+        const centerX = (minX + maxX) / 2;
+        const centerY = (minY + maxY) / 2;
+        const agentCount = z.agents ? z.agents.length : 0;
+        const label = svgEl("text");
+        label.setAttribute("x", centerX);
+        label.setAttribute("y", centerY);
+        label.setAttribute("class", "zoneLabel");
+        label.textContent = agentCount;
+        zonesLayer.appendChild(label);
+      }
     }
   }
 
@@ -649,6 +686,17 @@
       updateViewPanel();
     });
   }
+
+  /* =========================
+     Keyboard shortcuts
+  ========================= */
+  window.addEventListener("keydown", (e)=>{
+    if(e.key === "Escape"){
+      selectedZoneIndex = null;
+      renderZones();
+      updateViewPanel();
+    }
+  });
 
   /* =========================
      Init
