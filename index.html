@@ -1504,20 +1504,30 @@
   ========================= */
   async function loadDefaultExcelOnStartup(){
     try{
-      const res = await fetch("Liste Agents.xlsx?ts="+Date.now(), { cache: "no-store" });
+      // Charger depuis le repo GitHub (synchronisé automatiquement par Actions)
+      let res = await fetch("https://raw.githubusercontent.com/LucasClz/Formation/main/Liste%20Agents.xlsx", { 
+        cache: "no-store",
+        headers: { 'Accept': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }
+      });
+      
+      // Si le fichier GitHub n'existe pas, essayer en local
       if(!res.ok){
-        loadStatusText.textContent += " — Aucun fichier Liste Agents.xlsx trouvé.";
-        return;
+        console.warn("Impossible de charger depuis GitHub, essai en local...");
+        res = await fetch("Liste Agents.xlsx?ts="+Date.now(), { cache: "no-store" });
+        if(!res.ok){
+          loadStatusText.textContent += " — Aucun fichier Excel trouvé (GitHub ou local).";
+          return;
+        }
       }
 
       const arrayBuffer = await res.arrayBuffer();
       const wb = XLSX.read(arrayBuffer, { type: "array" });
       const sheetName = wb.SheetNames[0];
-      if(!sheetName){ loadStatusText.textContent += " — Liste Agents.xlsx sans feuille."; return; }
+      if(!sheetName){ loadStatusText.textContent += " — Feuille Excel sans onglet. "; return; }
       const ws = wb.Sheets[sheetName];
 
       const rows = XLSX.utils.sheet_to_json(ws, { defval: "", raw: false, blankrows: false });
-      if(!rows.length){ loadStatusText.textContent += " — Feuille vide."; return; }
+      if(!rows.length){ loadStatusText.textContent += " — Feuille Excel vide."; return; }
 
       const { agents, errors } = parseAgentsFromRows(rows);
 
