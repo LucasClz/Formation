@@ -1250,8 +1250,13 @@
     const pieContainer = document.getElementById('pieContainer');
     if(formation === 'ALL'){
       if(pieContainer) pieContainer.style.display = 'block';
-      // use filteredAgents (applies vacation/unit/shift filters) to compute pie
-      drawPieChart(filteredAgents);
+      // aggregate filtered agents across all zones (respect unit/vacation/shift filters)
+      const globalFiltered = [];
+      state.zones.forEach(z => {
+        const fa = filterAgents(z.agents || []);
+        if(fa && fa.length) globalFiltered.push(...fa);
+      });
+      drawPieChart(globalFiltered);
     } else {
       if(pieContainer) pieContainer.style.display = 'none';
       // clear pie if any
