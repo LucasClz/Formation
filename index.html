@@ -1423,13 +1423,21 @@
     v_filteredDetail.textContent = `${filtStats.formed} / ${filtStats.total} — unité ${unitTxt}, vacation ${vacTxt}, horaire ${shiftTxt}`;
 
     // --- Unité opérationnelle : calculer pour l'unité sélectionnée (ou globale si ALL)
-    const selectedUnit = unitFilter.value || "ALL";
+    const selectedUnit = unitFilter && unitFilter.value ? unitFilter.value : "ALL";
     let unitAgents = [];
     if(selectedUnit === "ALL"){
       // global: tous les agents
       state.zones.forEach(z => { unitAgents.push(...(z.agents || [])); });
     } else {
-      state.zones.forEach(z => { unitAgents.push(...((z.agents || []).filter(a => String(a.unit || "") === String(selectedUnit)))); });
+      // Prefer zone.unit (agents may not carry their unit). If zone.unit matches, include all zone agents.
+      state.zones.forEach(z => {
+        if(String(z.unit || "") === String(selectedUnit)){
+          unitAgents.push(...(z.agents || []));
+        } else {
+          // Otherwise include agents that explicitly have unit set
+          unitAgents.push(...((z.agents || []).filter(a => String(a.unit || "") === String(selectedUnit))));
+        }
+      });
     }
     const unitStats = computeStats(unitAgents, formation);
     v_unitLabel.textContent = `Unité (${selectedUnit === 'ALL' ? 'globale' : selectedUnit})`;
