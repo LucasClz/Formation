@@ -346,6 +346,7 @@
 
         <label class="small">Formation</label>
         <select id="formationSelect">
+          <option value="ALL">Toutes les formations</option>
           <option value="EPI">EPI</option>
           <option value="Extincteur">Extincteur</option>
           <option value="GF-SF">GF-SF</option>
@@ -447,6 +448,15 @@
                 <div id="v_unitPct" style="font-size:16px; font-weight:900;"></div>
               </div>
               <div class="bar" style="margin-top:8px;"><div id="v_unitBar"></div></div>
+            </div>
+
+            <!-- Pie chart for "Toutes les formations" -->
+            <div id="pieContainer" style="margin-top:14px; display:none;">
+              <div style="font-weight:900;">Répartition par formation</div>
+              <div style="display:flex; gap:12px; align-items:center; margin-top:8px;">
+                <svg id="pieChart" width="160" height="160" viewBox="0 0 160 160" aria-hidden="true"></svg>
+                <div id="pieLegend" style="display:flex; flex-direction:column; gap:6px; font-size:13px;"></div>
+              </div>
             </div>
 
             <div class="hr"></div>
@@ -1025,6 +1035,80 @@
     const pct = total === 0 ? 0 : Math.round((formed/total)*100);
     return { total, formed, pct };
   }
+  
+  /* =========================
+     Pie chart helpers
+  ========================= */
+  function polarToCartesian(cx, cy, r, angle){
+    return {
+      x: cx + r * Math.cos(angle),
+      y: cy + r * Math.sin(angle)
+    };
+  }
+
+  function drawPieChart(agents){
+    const svg = document.getElementById('pieChart');
+    const legend = document.getElementById('pieLegend');
+    if(!svg || !legend) return;
+    svg.innerHTML = '';
+    legend.innerHTML = '';
+
+    // Categories: assign agents exclusively by priority GF-SF -> EPI -> Extincteur -> none
+    const cats = [
+      { key: 'GF-SF', label: 'GF-SF', color: '#FFC95A', count: 0 },
+      { key: 'EPI', label: 'EPI', color: '#00A3E0', count: 0 },
+      { key: 'Extincteur', label: 'Extincteur', color: '#0B77C5', count: 0 },
+      { key: 'Aucun', label: 'Aucun', color: '#d1d5db', count: 0 }
+    ];
+
+    agents.forEach(a => {
+      if(a.trainings?.['GF-SF']) cats[0].count++;
+      else if(a.trainings?.['EPI']) cats[1].count++;
+      else if(a.trainings?.['Extincteur']) cats[2].count++;
+      else cats[3].count++;
+    });
+
+    const total = cats.reduce((s,c)=>s+c.count, 0);
+    if(total === 0){
+      const txt = document.createElementNS('http://www.w3.org/2000/svg','text');
+      txt.setAttribute('x',80); txt.setAttribute('y',85); txt.setAttribute('text-anchor','middle'); txt.setAttribute('fill','#6b7280');
+      txt.setAttribute('font-size','12'); txt.textContent = 'Aucun agent';
+      svg.appendChild(txt);
+      return;
+    }
+
+    const cx = 80, cy = 80, r = 70;
+    let startAngle = -Math.PI/2; // start at top
+
+    cats.forEach(cat => {
+      if(cat.count === 0) return;
+      const angle = (cat.count/total) * Math.PI * 2;
+      const endAngle = startAngle + angle;
+
+      const start = polarToCartesian(cx, cy, r, startAngle);
+      const end = polarToCartesian(cx, cy, r, endAngle);
+      const largeArc = angle > Math.PI ? 1 : 0;
+
+      const d = [`M ${cx} ${cy}`, `L ${start.x} ${start.y}`, `A ${r} ${r} 0 ${largeArc} 1 ${end.x} ${end.y}`, 'Z'].join(' ');
+
+      const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+      path.setAttribute('d', d);
+      path.setAttribute('fill', cat.color);
+      svg.appendChild(path);
+
+      // legend
+      const row = document.createElement('div');
+      row.style.display = 'flex'; row.style.alignItems = 'center'; row.style.gap = '8px';
+      const sw = document.createElement('div');
+      sw.style.width = '14px'; sw.style.height = '14px'; sw.style.background = cat.color; sw.style.borderRadius = '3px';
+      const lab = document.createElement('div');
+      lab.textContent = `${cat.label} — ${cat.count}`;
+      row.appendChild(sw); row.appendChild(lab);
+      legend.appendChild(row);
+
+      startAngle = endAngle;
+    });
+  }
   function filterAgents(zoneAgents){
     const u = unitFilter.value;
     const v = vacationFilter.value;
@@ -1091,6 +1175,19 @@
     v_unitPct.textContent = `${unitStats.pct}%`;
     v_unitBar.style.width = `${unitStats.pct}%`;
     v_unitDetail.textContent = `${unitStats.formed} / ${unitStats.total} agents formés`;
+
+    // Pie chart when 'Toutes les formations' is selected
+    const pieContainer = document.getElementById('pieContainer');
+    if(formation === 'ALL'){
+      if(pieContainer) pieContainer.style.display = 'block';
+      // use filteredAgents (applies vacation/unit/shift filters) to compute pie
+      drawPieChart(filteredAgents);
+    } else {
+      if(pieContainer) pieContainer.style.display = 'none';
+      // clear pie if any
+      const svg = document.getElementById('pieChart'); if(svg) svg.innerHTML = '';
+      const legend = document.getElementById('pieLegend'); if(legend) legend.innerHTML = '';
+    }
 
     v_agentsList.innerHTML = "";
     agents.forEach(a=>{
