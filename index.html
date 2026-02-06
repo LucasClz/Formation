@@ -326,6 +326,8 @@
       transform: translate(-50%, -120%);
       white-space: nowrap;
     }
+    /* Force pie svg size so global svg rule doesn't stretch it */
+    #pieChart{ width:160px !important; height:160px !important; flex:0 0 160px; background:transparent !important; }
   </style>
 </head>
 
@@ -1122,6 +1124,7 @@
       path.setAttribute('fill', cat.color);
       path.setAttribute('stroke', '#ffffff');
       path.setAttribute('stroke-width', '1');
+      path.style.opacity = '0.98';
       path.style.cursor = 'pointer';
       // tooltip handlers
       const percent = Math.round((cat.count/total)*100);
@@ -1162,7 +1165,19 @@
     inner.setAttribute('cy', cy);
     inner.setAttribute('r', Math.round(r * 0.45));
     inner.setAttribute('fill', '#ffffff');
+    inner.setAttribute('stroke', '#e5e7eb');
+    inner.setAttribute('stroke-width', '1');
     svg.appendChild(inner);
+    // center label (total)
+    const lbl = document.createElementNS('http://www.w3.org/2000/svg','text');
+    lbl.setAttribute('x', cx);
+    lbl.setAttribute('y', cy + 6);
+    lbl.setAttribute('text-anchor', 'middle');
+    lbl.setAttribute('fill', '#374151');
+    lbl.setAttribute('font-size', '14');
+    lbl.setAttribute('font-weight', '700');
+    lbl.textContent = String(total);
+    svg.appendChild(lbl);
   }
   function filterAgents(zoneAgents){
     const u = unitFilter.value;
