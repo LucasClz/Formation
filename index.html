@@ -1181,19 +1181,37 @@
   ========================= */
   function updateViewPanel(){
     const zone = getSelectedZone();
-    if(!zone){
-      emptyView.style.display = "block";
-      viewPanel.style.display = "none";
-      return;
-    }
-    emptyView.style.display = "none";
-    viewPanel.style.display = "block";
+    const formation = formationSelect.value;
 
-    if(viewZoneSelect){
-      viewZoneSelect.value = (selectedZoneIndex !== null) ? String(selectedZoneIndex) : "";
-    }
+    // If no specific zone is selected but the user asked for "Toutes les formations",
+    // show a global view aggregating agents from all zones (subject to filters).
+    let agents = [];
+    if(!zone && formation === 'ALL'){
+      // aggregate agents across all zones
+      state.zones.forEach(z => { agents.push(...(z.agents || [])); });
+      // show the view panel for global stats
+      emptyView.style.display = "none";
+      viewPanel.style.display = "block";
+      if(viewZoneSelect) viewZoneSelect.value = "";
+      v_zoneName.textContent = 'Global';
+      v_zoneCount.textContent = agents.length;
+    } else {
+      if(!zone){
+        emptyView.style.display = "block";
+        viewPanel.style.display = "none";
+        return;
+      }
+      emptyView.style.display = "none";
+      viewPanel.style.display = "block";
 
-    const agents = zone.agents || [];
+      if(viewZoneSelect){
+        viewZoneSelect.value = (selectedZoneIndex !== null) ? String(selectedZoneIndex) : "";
+      }
+
+      agents = zone.agents || [];
+      v_zoneName.textContent = zone.name || "(sans nom)";
+      v_zoneCount.textContent = agents.length;
+    }
     v_zoneName.textContent = zone.name || "(sans nom)";
     v_zoneCount.textContent = agents.length;
 
