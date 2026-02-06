@@ -53,75 +53,99 @@
       height:46px;
       background: var(--top2);
       border-bottom:1px solid #dcdcdc;
-        const svg = document.getElementById('pieChart');
-        const legend = document.getElementById('pieLegend');
-        if(!svg || !legend) return;
-        svg.innerHTML = '';
-        legend.innerHTML = '';
+      display:flex;
+      align-items:center;
+      gap:12px;
+      padding: 0 18px;
+      overflow:auto;
+      white-space:nowrap;
+    }
+    .navlink{
+      display:inline-flex;
+      align-items:center;
+      padding:8px 12px;
+      border-radius:10px;
+      font-weight:900;
+      color:#2f3b4a;
+      border:1px solid transparent;
+      cursor:pointer;
+      user-select:none;
+    }
+    .navlink:hover{ background:#f3f4f6; }
+    .navlink.active{
+      background: rgba(11,119,197,.08);
+      border-color: rgba(11,119,197,.25);
+      color: var(--blue);
+    }
+    .sep{ color:#9aa3af; font-weight:900; }
 
-        // Categories: assign agents exclusively by priority GF-SF -> EPI -> Extincteur -> none
-        const cats = [
-          { key: 'GF-SF', label: 'GF-SF', color: '#FFC95A', count: 0 },
-          { key: 'EPI', label: 'EPI', color: '#00A3E0', count: 0 },
-          { key: 'Extincteur', label: 'Extincteur', color: '#0B77C5', count: 0 },
-          { key: 'Aucun', label: 'Aucun', color: '#d1d5db', count: 0 }
-        ];
-        agents.forEach(a => {
-          if(a.trainings?.['GF-SF']) cats[0].count++;
-          else if(a.trainings?.['EPI']) cats[1].count++;
-          else if(a.trainings?.['Extincteur']) cats[2].count++;
-          else cats[3].count++;
-        });
-
-        const total = cats.reduce((s,c)=>s+c.count, 0);
-        const cx = 80, cy = 80, r = 60; // smaller r to leave room
-
-        if(total === 0){
-          const txt = document.createElementNS('http://www.w3.org/2000/svg','text');
-          txt.setAttribute('x',cx); txt.setAttribute('y',cy+5); txt.setAttribute('text-anchor','middle'); txt.setAttribute('fill','#6b7280');
-          txt.setAttribute('font-size','12'); txt.textContent = 'Aucun agent';
-          svg.appendChild(txt);
-          const summary = document.getElementById('pieSummary'); if(summary) summary.innerHTML = cats.map(c=>`<div>${c.label}: ${c.count} (0%)</div>`).join('');
-          return;
-        }
-
-        // Use stroke-based donut segments (robust rendering)
-        const circumference = 2 * Math.PI * r;
-        let offset = 0;
-        cats.forEach((cat, idx)=>{
-          if(cat.count === 0) return;
-          const pct = cat.count / total;
-          const dash = Math.max(0.001, Math.round(circumference * pct));
-
-          const circle = document.createElementNS('http://www.w3.org/2000/svg','circle');
-          circle.setAttribute('cx', cx);
-          circle.setAttribute('cy', cy);
-          circle.setAttribute('r', r);
-          circle.setAttribute('fill', 'none');
-          circle.setAttribute('stroke', cat.color);
-          circle.setAttribute('stroke-width', String(r * 0.9));
-          circle.setAttribute('stroke-dasharray', `${dash} ${Math.max(1, Math.round(circumference - dash))}`);
-          circle.setAttribute('stroke-dashoffset', String(-offset));
-          circle.setAttribute('transform', `rotate(-90 ${cx} ${cy})`);
-          circle.style.transition = 'stroke-dasharray .3s, stroke-dashoffset .3s';
-          svg.appendChild(circle);
-
-          const row = document.createElement('div');
-          row.style.display = 'flex'; row.style.alignItems = 'center'; row.style.gap = '8px';
-          const sw = document.createElement('div'); sw.style.width='14px'; sw.style.height='14px'; sw.style.background = cat.color; sw.style.borderRadius='3px';
-          const lab = document.createElement('div'); lab.textContent = `${cat.label} — ${cat.count} (${Math.round(pct*100)}%)`;
-          row.appendChild(sw); row.appendChild(lab);
-          legend.appendChild(row);
-
-          offset += dash;
-        });
-
-        // center hole is automatic because circles are stroked; still add inner circle for clean look
-        const inner = document.createElementNS('http://www.w3.org/2000/svg','circle');
-        inner.setAttribute('cx', cx); inner.setAttribute('cy', cy); inner.setAttribute('r', String(r*0.4)); inner.setAttribute('fill', '#fff');
-        svg.appendChild(inner);
-        const summary = document.getElementById('pieSummary'); if(summary) summary.innerHTML = cats.map(c=>`${c.label}: ${c.count} (${total?Math.round((c.count/total)*100):0}%)`).join('<br>');
-      }
+    /* App */
+    .app{
+      display:grid;
+      grid-template-columns: 1fr 440px;
+      gap:16px;
+      padding:16px;
+      height: calc(100vh - 70px - 46px);
+    }
+    .canvasWrap{
+      position:relative;
+      border-radius:12px;
+      overflow:hidden;
+      min-height: 520px;
+    }
+    .toolbar{
+      position:absolute;
+      top:14px;
+      left:14px;
+      z-index:5;
+      background: rgba(255,255,255,.92);
+      border:1px solid var(--border);
+      border-radius:12px;
+      padding:10px 12px;
+      display:flex;
+      gap:10px;
+      align-items:center;
+      flex-wrap:wrap;
+      box-shadow: 0 10px 24px rgba(0,0,0,.08);
+      max-width: calc(100% - 28px);
+    }
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding:6px 10px;
+      border-radius:999px;
+      border:1px solid var(--border);
+      background:#fff;
+      font-size:12px;
+      color: var(--muted);
+      white-space:nowrap;
+    }
+    label.small{
+      font-size:12px;
+      color: var(--muted);
+      font-weight:900;
+    }
+    select, button, input{
+      border:1px solid var(--border);
+      border-radius:10px;
+      padding:8px 10px;
+      background:#fff;
+      color: var(--text);
+      outline:none;
+      font-weight:700;
+    }
+    select:focus, input:focus{
+      box-shadow: 0 0 0 3px rgba(11,119,197,.15);
+      border-color: rgba(11,119,197,.35);
+    }
+    button{
+      cursor:pointer;
+      background: var(--blue);
+      border-color: rgba(11,119,197,.25);
+      color:#fff;
+      transition:.12s;
+      font-weight:900;
       white-space:nowrap;
     }
     button:hover{ background: var(--blue2); }
@@ -440,28 +464,12 @@
               <div class="bar" style="margin-top:8px;"><div id="v_unitBar"></div></div>
             </div>
 
-            <!-- Camembert zone (visible en mode Vue + Toutes les formations + zone sélectionnée) -->
+            <!-- Pie chart for "Toutes les formations" -->
             <div id="pieContainer" style="margin-top:14px; display:none;">
-              <div style="font-weight:900;">Camembert — Répartition par formation (zone sélectionnée)</div>
+              <div style="font-weight:900;">Répartition par formation</div>
               <div style="display:flex; gap:12px; align-items:center; margin-top:8px;">
-                <svg id="pieChart" width="160" height="160" viewBox="0 0 160 160" aria-hidden="true" style="width:160px;height:160px;flex:0 0 auto;"></svg>
+                <svg id="pieChart" width="160" height="160" viewBox="0 0 160 160" aria-hidden="true"></svg>
                 <div id="pieLegend" style="display:flex; flex-direction:column; gap:6px; font-size:13px;"></div>
-              </div>
-              <div id="pieSummary" style="margin-top:8px; font-size:13px; color: var(--muted);"></div>
-            </div>
-
-            <!-- Bouton pour afficher le camembert par unité -->
-            <div style="margin-top:12px; display:flex; gap:8px; align-items:center;">
-              <button id="toggleUnitDonutBtn" class="ghost">Afficher camembert Unité</button>
-              <div class="muted">(visible uniquement sur demande)</div>
-            </div>
-
-            <!-- Camembert par unité (hidden by default, toggled by button) -->
-            <div id="unitDonutContainer" style="margin-top:12px; display:none;">
-              <div style="font-weight:900; margin-bottom:8px;">Camembert — Agents formés par unité</div>
-              <div style="display:flex; gap:12px; align-items:center;">
-                <svg id="unitDonut" width="140" height="140" viewBox="0 0 140 140" aria-hidden="true" style="width:140px;height:140px;flex:0 0 auto;"></svg>
-                <div id="unitLegend" style="display:flex; flex-direction:column; gap:6px; font-size:13px; max-height:140px; overflow:auto;"></div>
               </div>
             </div>
 
@@ -648,8 +656,6 @@
 
   // Unit filter
   const unitFilter = document.getElementById("unitFilter");
-  const toggleUnitDonutBtn = document.getElementById("toggleUnitDonutBtn");
-  const unitDonutContainer = document.getElementById("unitDonutContainer");
 
   /* =========================
      Load Zone.json
@@ -1070,14 +1076,8 @@
     const svg = document.getElementById('pieChart');
     const legend = document.getElementById('pieLegend');
     if(!svg || !legend) return;
-    // force explicit inline size and clear background to avoid global svg CSS interfering
-    try{
-      svg.style.width = '160px'; svg.style.height = '160px'; svg.style.background = 'transparent'; svg.style.display = 'block';
-      svg.setAttribute('viewBox','0 0 160 160');
-    }catch(e){}
     svg.innerHTML = '';
     legend.innerHTML = '';
-    console.log('drawPieChart called, agents:', agents.length);
 
     // Categories: assign agents exclusively by priority GF-SF -> EPI -> Extincteur -> none
     const cats = [
@@ -1100,7 +1100,6 @@
       txt.setAttribute('x',80); txt.setAttribute('y',85); txt.setAttribute('text-anchor','middle'); txt.setAttribute('fill','#6b7280');
       txt.setAttribute('font-size','12'); txt.textContent = 'Aucun agent';
       svg.appendChild(txt);
-      const summary = document.getElementById('pieSummary'); if(summary) summary.innerHTML = cats.map(c=>`<div>${c.label}: ${c.count} (${Math.round((c.count/Math.max(1,total))*100)}%)</div>`).join('');
       return;
     }
 
@@ -1123,7 +1122,6 @@
       path.setAttribute('fill', cat.color);
       path.setAttribute('stroke', '#ffffff');
       path.setAttribute('stroke-width', '1');
-      path.setAttribute('fill-opacity','1'); path.style.opacity = '1';
       path.style.cursor = 'pointer';
       // tooltip handlers
       const percent = Math.round((cat.count/total)*100);
@@ -1165,68 +1163,6 @@
     inner.setAttribute('r', Math.round(r * 0.45));
     inner.setAttribute('fill', '#ffffff');
     svg.appendChild(inner);
-    const summary = document.getElementById('pieSummary'); if(summary) summary.innerHTML = cats.map(c=>`<div>${c.label}: ${c.count} (${Math.round((c.count/total)*100)}%)</div>`).join('');
-    console.log('drawPieChart rendered segments:', cats.length, 'total:', total);
-  }
-  
-  // Draw unit pie for selected zone's unit (distribution of formations within that unit)
-  function drawUnitDonutForSelectedUnit(){
-    const svg = document.getElementById('unitDonut');
-    const legend = document.getElementById('unitLegend');
-    if(!svg || !legend) return;
-    svg.innerHTML = ''; legend.innerHTML = '';
-
-    const zone = getSelectedZone();
-    if(!zone) return;
-    const unit = zone.unit || '(Aucune)';
-
-    // collect agents from zones matching this unit
-    let agents = [];
-    state.zones.forEach(z=>{ if(String(z.unit||'(Aucune)') === String(unit)){ agents.push(...(z.agents||[])); }});
-
-    // apply vacation/shift filters similarly to view
-    agents = agents.filter(a=>{
-      const okV = (vacationFilter.value === 'ALL') || (a.vacation === vacationFilter.value);
-      const okS = (shiftFilter.value === 'ALL') || (a.shift === shiftFilter.value);
-      return okV && okS;
-    });
-
-    // Count by formation priority (exclusive categories as in drawPieChart)
-    const cats = [
-      { key: 'GF-SF', label: 'GF-SF', color: '#FFC95A', count: 0 },
-      { key: 'EPI', label: 'EPI', color: '#00A3E0', count: 0 },
-      { key: 'Extincteur', label: 'Extincteur', color: '#0B77C5', count: 0 },
-      { key: 'Aucun', label: 'Aucun', color: '#d1d5db', count: 0 }
-    ];
-    agents.forEach(a=>{ if(a.trainings?.['GF-SF']) cats[0].count++; else if(a.trainings?.['EPI']) cats[1].count++; else if(a.trainings?.['Extincteur']) cats[2].count++; else cats[3].count++; });
-
-    const total = cats.reduce((s,c)=>s+c.count,0);
-    if(total === 0){
-      const txt = document.createElementNS('http://www.w3.org/2000/svg','text'); txt.setAttribute('x',70); txt.setAttribute('y',75); txt.setAttribute('text-anchor','middle'); txt.setAttribute('fill','#6b7280'); txt.setAttribute('font-size','12'); txt.textContent = 'Aucun agent formé'; svg.appendChild(txt);
-      return;
-    }
-
-    // stroke-based donut
-    const cx = 70, cy = 70, r = 50;
-    const circumference = 2 * Math.PI * r;
-    let offset = 0;
-    cats.forEach((cat, idx)=>{
-      if(cat.count === 0) return;
-      const pct = cat.count / total;
-      const dash = Math.max(0.001, Math.round(circumference * pct));
-      const circle = document.createElementNS('http://www.w3.org/2000/svg','circle');
-      circle.setAttribute('cx', cx); circle.setAttribute('cy', cy); circle.setAttribute('r', r);
-      circle.setAttribute('fill','none'); circle.setAttribute('stroke', cat.color); circle.setAttribute('stroke-width', String(r * 0.9));
-      circle.setAttribute('stroke-dasharray', `${dash} ${Math.max(1, Math.round(circumference - dash))}`);
-      circle.setAttribute('stroke-dashoffset', String(-offset));
-      circle.setAttribute('transform', `rotate(-90 ${cx} ${cy})`);
-      svg.appendChild(circle);
-
-      const row = document.createElement('div'); row.style.display='flex'; row.style.alignItems='center'; row.style.gap='8px'; const sw = document.createElement('div'); sw.style.width='12px'; sw.style.height='12px'; sw.style.background=cat.color; sw.style.borderRadius='3px'; const lab = document.createElement('div'); lab.textContent = `${cat.label} — ${cat.count} (${Math.round(pct*100)}%)`; row.appendChild(sw); row.appendChild(lab); legend.appendChild(row);
-      offset += dash;
-    });
-
-    const inner = document.createElementNS('http://www.w3.org/2000/svg','circle'); inner.setAttribute('cx', cx); inner.setAttribute('cy', cy); inner.setAttribute('r', Math.round(r*0.45)); inner.setAttribute('fill','#fff'); svg.appendChild(inner);
   }
   function filterAgents(zoneAgents){
     const u = unitFilter.value;
@@ -1238,147 +1174,6 @@
       const okS = (s === "ALL") || (a.shift === s);
       return okU && okV && okS;
     });
-  }
-
-  // Helper: determine if an agent is trained for chosen formation
-  function agentIsTrained(agent, formation){
-    if(!agent) return false;
-    if(!formation || formation === 'ALL'){
-      // any training counts
-      return formations.some(f => !!agent.trainings?.[f]);
-    }
-    return !!agent.trainings?.[formation];
-  }
-
-  // Draw donut showing distribution of trained agents across zones
-  function drawZoneDonut(){
-    const svg = document.getElementById('zoneDonut');
-    const legend = document.getElementById('zoneLegend');
-    if(!svg || !legend) return;
-    svg.innerHTML = '';
-    legend.innerHTML = '';
-
-    const formation = formationSelect.value;
-    const unitFilterVal = (unitFilter && unitFilter.value) ? unitFilter.value : 'ALL';
-
-    // Build categories: for each zone, count trained agents (respecting vacation/shift filters)
-    const cats = [];
-    for(let i=0;i<state.zones.length;i++){
-      const z = state.zones[i];
-      if(unitFilterVal !== 'ALL' && String(z.unit || '') !== String(unitFilterVal)) continue;
-      const agents = z.agents || [];
-      const filtered = agents.filter(a => {
-        const okV = (vacationFilter.value === 'ALL') || (a.vacation === vacationFilter.value);
-        const okS = (shiftFilter.value === 'ALL') || (a.shift === shiftFilter.value);
-        return okV && okS;
-      });
-      const count = filtered.filter(a => agentIsTrained(a, formation)).length;
-      if(count > 0) cats.push({ key: z.name || `(zone ${i})`, label: z.name || `(sans nom)`, count });
-    }
-
-    const total = cats.reduce((s,c)=>s+c.count,0);
-    if(total === 0){
-      const txt = document.createElementNS('http://www.w3.org/2000/svg','text');
-      txt.setAttribute('x',80); txt.setAttribute('y',85); txt.setAttribute('text-anchor','middle'); txt.setAttribute('fill','#6b7280');
-      txt.setAttribute('font-size','12'); txt.textContent = 'Aucun agent formé';
-      svg.appendChild(txt);
-      return;
-    }
-
-    const colors = ['#0B77C5','#00A3E0','#FFC95A','#10B981','#F97316','#8B5CF6','#EF4444','#D1D5DB'];
-    const cx = 80, cy = 80, r = 70;
-    let start = -Math.PI/2;
-    cats.forEach((cat, idx)=>{
-      const angle = (cat.count/total) * Math.PI * 2;
-      const end = start + angle;
-      const spt = polarToCartesian(cx, cy, r, start);
-      const ept = polarToCartesian(cx, cy, r, end);
-      const largeArc = angle > Math.PI ? 1 : 0;
-      const d = [`M ${cx} ${cy}`, `L ${spt.x} ${spt.y}`, `A ${r} ${r} 0 ${largeArc} 1 ${ept.x} ${ept.y}`, 'Z'].join(' ');
-      const path = document.createElementNS('http://www.w3.org/2000/svg','path');
-      path.setAttribute('d', d);
-      path.setAttribute('fill', colors[idx % colors.length]);
-      path.setAttribute('stroke', '#fff'); path.setAttribute('stroke-width','1');
-      svg.appendChild(path);
-
-      const row = document.createElement('div');
-      row.style.display = 'flex'; row.style.alignItems = 'center'; row.style.gap = '8px';
-      const sw = document.createElement('div'); sw.style.width='14px'; sw.style.height='14px'; sw.style.background = colors[idx % colors.length]; sw.style.borderRadius='3px';
-      const lab = document.createElement('div'); lab.textContent = `${cat.label} — ${cat.count} (${Math.round((cat.count/total)*100)}%)`;
-      row.appendChild(sw); row.appendChild(lab);
-      legend.appendChild(row);
-
-      start = end;
-    });
-
-    // inner circle
-    const inner = document.createElementNS('http://www.w3.org/2000/svg','circle');
-    inner.setAttribute('cx', cx); inner.setAttribute('cy', cy); inner.setAttribute('r', Math.round(r*0.5)); inner.setAttribute('fill','#fff');
-    svg.appendChild(inner);
-  }
-
-  // Draw donut grouping by unit (PRM, QSE, MR, SC and others)
-  function drawUnitDonut(){
-    const svg = document.getElementById('unitDonut');
-    const legend = document.getElementById('unitLegend');
-    if(!svg || !legend) return;
-    svg.innerHTML = ''; legend.innerHTML = '';
-
-    const formation = formationSelect.value;
-
-    // Build map unit -> count trained (respecting vacation/shift filters)
-    const unitMap = {};
-    for(const z of state.zones){
-      const unit = z.unit || '(Aucune)';
-      const agents = z.agents || [];
-      const filtered = agents.filter(a => {
-        const okV = (vacationFilter.value === 'ALL') || (a.vacation === vacationFilter.value);
-        const okS = (shiftFilter.value === 'ALL') || (a.shift === shiftFilter.value);
-        return okV && okS;
-      });
-      const count = filtered.filter(a => agentIsTrained(a, formation)).length;
-      unitMap[unit] = (unitMap[unit] || 0) + count;
-    }
-
-    const cats = Object.keys(unitMap).map(k=>({ key:k, label:k, count: unitMap[k] })).filter(c=>c.count>0);
-    const total = cats.reduce((s,c)=>s+c.count,0);
-    if(total === 0){
-      const txt = document.createElementNS('http://www.w3.org/2000/svg','text');
-      txt.setAttribute('x',70); txt.setAttribute('y',75); txt.setAttribute('text-anchor','middle'); txt.setAttribute('fill','#6b7280');
-      txt.setAttribute('font-size','12'); txt.textContent = 'Aucun agent formé';
-      svg.appendChild(txt);
-      return;
-    }
-
-    const colors = ['#0B77C5','#00A3E0','#FFC95A','#10B981','#F97316','#8B5CF6','#EF4444','#D1D5DB'];
-    const cx = 70, cy = 70, r = 60;
-    let start = -Math.PI/2;
-    cats.forEach((cat, idx)=>{
-      const angle = (cat.count/total) * Math.PI * 2;
-      const end = start + angle;
-      const spt = polarToCartesian(cx, cy, r, start);
-      const ept = polarToCartesian(cx, cy, r, end);
-      const largeArc = angle > Math.PI ? 1 : 0;
-      const d = [`M ${cx} ${cy}`, `L ${spt.x} ${spt.y}`, `A ${r} ${r} 0 ${largeArc} 1 ${ept.x} ${ept.y}`, 'Z'].join(' ');
-      const path = document.createElementNS('http://www.w3.org/2000/svg','path');
-      path.setAttribute('d', d);
-      path.setAttribute('fill', colors[idx % colors.length]);
-      path.setAttribute('stroke', '#fff'); path.setAttribute('stroke-width','1');
-      svg.appendChild(path);
-
-      const row = document.createElement('div');
-      row.style.display = 'flex'; row.style.alignItems = 'center'; row.style.gap = '8px';
-      const sw = document.createElement('div'); sw.style.width='12px'; sw.style.height='12px'; sw.style.background = colors[idx % colors.length]; sw.style.borderRadius='3px';
-      const lab = document.createElement('div'); lab.textContent = `${cat.label} — ${cat.count} (${Math.round((cat.count/total)*100)}%)`;
-      row.appendChild(sw); row.appendChild(lab);
-      legend.appendChild(row);
-
-      start = end;
-    });
-
-    const inner = document.createElementNS('http://www.w3.org/2000/svg','circle');
-    inner.setAttribute('cx', cx); inner.setAttribute('cy', cy); inner.setAttribute('r', Math.round(r*0.48)); inner.setAttribute('fill','#fff');
-    svg.appendChild(inner);
   }
 
   /* =========================
@@ -1436,20 +1231,17 @@
     v_unitBar.style.width = `${unitStats.pct}%`;
     v_unitDetail.textContent = `${unitStats.formed} / ${unitStats.total} agents formés`;
 
-    // Pie for selected zone: visible only in view + "Toutes les formations"
+    // Pie chart when 'Toutes les formations' is selected
     const pieContainer = document.getElementById('pieContainer');
-    if(activeTab === 'view' && formation === 'ALL' && zone){
+    if(formation === 'ALL'){
       if(pieContainer) pieContainer.style.display = 'block';
-      try{ drawPieChart(filteredAgents); }catch(e){ console.warn('drawPieChart error', e); }
+      // use filteredAgents (applies vacation/unit/shift filters) to compute pie
+      drawPieChart(filteredAgents);
     } else {
       if(pieContainer) pieContainer.style.display = 'none';
-      const pc = document.getElementById('pieChart'); if(pc) pc.innerHTML = '';
-      const pl = document.getElementById('pieLegend'); if(pl) pl.innerHTML = '';
-    }
-
-    // If unit donut container is visible, redraw for current selection
-    if(unitDonutContainer && unitDonutContainer.style.display !== 'none'){
-      try{ drawUnitDonutForSelectedUnit(); }catch(e){ console.warn('drawUnitDonutForSelectedUnit error', e); }
+      // clear pie if any
+      const svg = document.getElementById('pieChart'); if(svg) svg.innerHTML = '';
+      const legend = document.getElementById('pieLegend'); if(legend) legend.innerHTML = '';
     }
 
     v_agentsList.innerHTML = "";
@@ -1586,21 +1378,6 @@
       selectedZoneIndex = Number(val);
       renderZones();
       updatePanels();
-    });
-  }
-
-  if(toggleUnitDonutBtn){
-    toggleUnitDonutBtn.addEventListener('click', ()=>{
-      if(!unitDonutContainer) return;
-      const showing = unitDonutContainer.style.display !== 'none';
-      if(showing){
-        unitDonutContainer.style.display = 'none';
-        toggleUnitDonutBtn.textContent = 'Afficher camembert Unité';
-      } else {
-        unitDonutContainer.style.display = 'block';
-        toggleUnitDonutBtn.textContent = 'Masquer camembert Unité';
-        try{ drawUnitDonutForSelectedUnit(); }catch(e){ console.warn('drawUnitDonutForSelectedUnit error', e); }
-      }
     });
   }
 
