@@ -438,6 +438,17 @@
               <div class="bar" style="margin-top:8px;"><div id="v_filteredBar"></div></div>
             </div>
 
+            <div style="margin-top:14px;">
+              <div class="row">
+                <div>
+                  <div style="font-weight:900;" id="v_unitLabel">Unité</div>
+                  <div class="muted" id="v_unitDetail"></div>
+                </div>
+                <div id="v_unitPct" style="font-size:16px; font-weight:900;"></div>
+              </div>
+              <div class="bar" style="margin-top:8px;"><div id="v_unitBar"></div></div>
+            </div>
+
             <div class="hr"></div>
 
             <div style="font-weight:900; margin-bottom:8px;">Agents</div>
@@ -580,6 +591,10 @@
   const v_filteredDetail = document.getElementById("v_filteredDetail");
   const v_filteredPct = document.getElementById("v_filteredPct");
   const v_filteredBar = document.getElementById("v_filteredBar");
+  const v_unitLabel = document.getElementById("v_unitLabel");
+  const v_unitDetail = document.getElementById("v_unitDetail");
+  const v_unitPct = document.getElementById("v_unitPct");
+  const v_unitBar = document.getElementById("v_unitBar");
   const v_agentsList = document.getElementById("v_agentsList");
 
   const zoneSelect = document.getElementById("zoneSelect");
@@ -1061,6 +1076,21 @@
     v_filteredPct.textContent = `${filtStats.pct}%`;
     v_filteredBar.style.width = `${filtStats.pct}%`;
     v_filteredDetail.textContent = `${filtStats.formed} / ${filtStats.total} — unité ${unitTxt}, vacation ${vacTxt}, horaire ${shiftTxt}`;
+
+    // --- Unité opérationnelle : calculer pour l'unité sélectionnée (ou globale si ALL)
+    const selectedUnit = unitFilter.value || "ALL";
+    let unitAgents = [];
+    if(selectedUnit === "ALL"){
+      // global: tous les agents
+      state.zones.forEach(z => { unitAgents.push(...(z.agents || [])); });
+    } else {
+      state.zones.forEach(z => { unitAgents.push(...((z.agents || []).filter(a => String(a.unit || "") === String(selectedUnit)))); });
+    }
+    const unitStats = computeStats(unitAgents, formation);
+    v_unitLabel.textContent = `Unité (${selectedUnit === 'ALL' ? 'globale' : selectedUnit})`;
+    v_unitPct.textContent = `${unitStats.pct}%`;
+    v_unitBar.style.width = `${unitStats.pct}%`;
+    v_unitDetail.textContent = `${unitStats.formed} / ${unitStats.total} agents formés`;
 
     v_agentsList.innerHTML = "";
     agents.forEach(a=>{
