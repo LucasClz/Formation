@@ -1212,10 +1212,7 @@
       v_zoneName.textContent = zone.name || "(sans nom)";
       v_zoneCount.textContent = agents.length;
     }
-    v_zoneName.textContent = zone.name || "(sans nom)";
-    v_zoneCount.textContent = agents.length;
-
-    const formation = formationSelect.value;
+    // (zone name & count already set inside the branch above)
 
     const totalStats = computeStats(agents, formation);
     v_totalLabel.textContent = `Total (${formation})`;
