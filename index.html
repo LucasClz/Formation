@@ -473,6 +473,25 @@
               </div>
             </div>
 
+            <!-- Donuts : par zone et par unité -->
+            <div id="zoneUnitDonuts" style="margin-top:14px; display:flex; gap:18px; align-items:flex-start;">
+              <div style="flex:1;">
+                <div style="font-weight:900; margin-bottom:8px;">Camembert — Agents formés par zone</div>
+                <div style="display:flex; gap:12px; align-items:center;">
+                  <svg id="zoneDonut" width="160" height="160" viewBox="0 0 160 160" aria-hidden="true"></svg>
+                  <div id="zoneLegend" style="display:flex; flex-direction:column; gap:6px; font-size:13px; max-height:160px; overflow:auto;"></div>
+                </div>
+              </div>
+
+              <div style="width:260px;">
+                <div style="font-weight:900; margin-bottom:8px;">Camembert — Agents formés par unité</div>
+                <div style="display:flex; gap:12px; align-items:center;">
+                  <svg id="unitDonut" width="140" height="140" viewBox="0 0 140 140" aria-hidden="true"></svg>
+                  <div id="unitLegend" style="display:flex; flex-direction:column; gap:6px; font-size:13px; max-height:140px; overflow:auto;"></div>
+                </div>
+              </div>
+            </div>
+
             <div class="hr"></div>
 
             <div style="font-weight:900; margin-bottom:8px;">Agents</div>
@@ -1176,6 +1195,147 @@
     });
   }
 
+  // Helper: determine if an agent is trained for chosen formation
+  function agentIsTrained(agent, formation){
+    if(!agent) return false;
+    if(!formation || formation === 'ALL'){
+      // any training counts
+      return formations.some(f => !!agent.trainings?.[f]);
+    }
+    return !!agent.trainings?.[formation];
+  }
+
+  // Draw donut showing distribution of trained agents across zones
+  function drawZoneDonut(){
+    const svg = document.getElementById('zoneDonut');
+    const legend = document.getElementById('zoneLegend');
+    if(!svg || !legend) return;
+    svg.innerHTML = '';
+    legend.innerHTML = '';
+
+    const formation = formationSelect.value;
+    const unitFilterVal = (unitFilter && unitFilter.value) ? unitFilter.value : 'ALL';
+
+    // Build categories: for each zone, count trained agents (respecting vacation/shift filters)
+    const cats = [];
+    for(let i=0;i<state.zones.length;i++){
+      const z = state.zones[i];
+      if(unitFilterVal !== 'ALL' && String(z.unit || '') !== String(unitFilterVal)) continue;
+      const agents = z.agents || [];
+      const filtered = agents.filter(a => {
+        const okV = (vacationFilter.value === 'ALL') || (a.vacation === vacationFilter.value);
+        const okS = (shiftFilter.value === 'ALL') || (a.shift === shiftFilter.value);
+        return okV && okS;
+      });
+      const count = filtered.filter(a => agentIsTrained(a, formation)).length;
+      if(count > 0) cats.push({ key: z.name || `(zone ${i})`, label: z.name || `(sans nom)`, count });
+    }
+
+    const total = cats.reduce((s,c)=>s+c.count,0);
+    if(total === 0){
+      const txt = document.createElementNS('http://www.w3.org/2000/svg','text');
+      txt.setAttribute('x',80); txt.setAttribute('y',85); txt.setAttribute('text-anchor','middle'); txt.setAttribute('fill','#6b7280');
+      txt.setAttribute('font-size','12'); txt.textContent = 'Aucun agent formé';
+      svg.appendChild(txt);
+      return;
+    }
+
+    const colors = ['#0B77C5','#00A3E0','#FFC95A','#10B981','#F97316','#8B5CF6','#EF4444','#D1D5DB'];
+    const cx = 80, cy = 80, r = 70;
+    let start = -Math.PI/2;
+    cats.forEach((cat, idx)=>{
+      const angle = (cat.count/total) * Math.PI * 2;
+      const end = start + angle;
+      const spt = polarToCartesian(cx, cy, r, start);
+      const ept = polarToCartesian(cx, cy, r, end);
+      const largeArc = angle > Math.PI ? 1 : 0;
+      const d = [`M ${cx} ${cy}`, `L ${spt.x} ${spt.y}`, `A ${r} ${r} 0 ${largeArc} 1 ${ept.x} ${ept.y}`, 'Z'].join(' ');
+      const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+      path.setAttribute('d', d);
+      path.setAttribute('fill', colors[idx % colors.length]);
+      path.setAttribute('stroke', '#fff'); path.setAttribute('stroke-width','1');
+      svg.appendChild(path);
+
+      const row = document.createElement('div');
+      row.style.display = 'flex'; row.style.alignItems = 'center'; row.style.gap = '8px';
+      const sw = document.createElement('div'); sw.style.width='14px'; sw.style.height='14px'; sw.style.background = colors[idx % colors.length]; sw.style.borderRadius='3px';
+      const lab = document.createElement('div'); lab.textContent = `${cat.label} — ${cat.count} (${Math.round((cat.count/total)*100)}%)`;
+      row.appendChild(sw); row.appendChild(lab);
+      legend.appendChild(row);
+
+      start = end;
+    });
+
+    // inner circle
+    const inner = document.createElementNS('http://www.w3.org/2000/svg','circle');
+    inner.setAttribute('cx', cx); inner.setAttribute('cy', cy); inner.setAttribute('r', Math.round(r*0.5)); inner.setAttribute('fill','#fff');
+    svg.appendChild(inner);
+  }
+
+  // Draw donut grouping by unit (PRM, QSE, MR, SC and others)
+  function drawUnitDonut(){
+    const svg = document.getElementById('unitDonut');
+    const legend = document.getElementById('unitLegend');
+    if(!svg || !legend) return;
+    svg.innerHTML = ''; legend.innerHTML = '';
+
+    const formation = formationSelect.value;
+
+    // Build map unit -> count trained (respecting vacation/shift filters)
+    const unitMap = {};
+    for(const z of state.zones){
+      const unit = z.unit || '(Aucune)';
+      const agents = z.agents || [];
+      const filtered = agents.filter(a => {
+        const okV = (vacationFilter.value === 'ALL') || (a.vacation === vacationFilter.value);
+        const okS = (shiftFilter.value === 'ALL') || (a.shift === shiftFilter.value);
+        return okV && okS;
+      });
+      const count = filtered.filter(a => agentIsTrained(a, formation)).length;
+      unitMap[unit] = (unitMap[unit] || 0) + count;
+    }
+
+    const cats = Object.keys(unitMap).map(k=>({ key:k, label:k, count: unitMap[k] })).filter(c=>c.count>0);
+    const total = cats.reduce((s,c)=>s+c.count,0);
+    if(total === 0){
+      const txt = document.createElementNS('http://www.w3.org/2000/svg','text');
+      txt.setAttribute('x',70); txt.setAttribute('y',75); txt.setAttribute('text-anchor','middle'); txt.setAttribute('fill','#6b7280');
+      txt.setAttribute('font-size','12'); txt.textContent = 'Aucun agent formé';
+      svg.appendChild(txt);
+      return;
+    }
+
+    const colors = ['#0B77C5','#00A3E0','#FFC95A','#10B981','#F97316','#8B5CF6','#EF4444','#D1D5DB'];
+    const cx = 70, cy = 70, r = 60;
+    let start = -Math.PI/2;
+    cats.forEach((cat, idx)=>{
+      const angle = (cat.count/total) * Math.PI * 2;
+      const end = start + angle;
+      const spt = polarToCartesian(cx, cy, r, start);
+      const ept = polarToCartesian(cx, cy, r, end);
+      const largeArc = angle > Math.PI ? 1 : 0;
+      const d = [`M ${cx} ${cy}`, `L ${spt.x} ${spt.y}`, `A ${r} ${r} 0 ${largeArc} 1 ${ept.x} ${ept.y}`, 'Z'].join(' ');
+      const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+      path.setAttribute('d', d);
+      path.setAttribute('fill', colors[idx % colors.length]);
+      path.setAttribute('stroke', '#fff'); path.setAttribute('stroke-width','1');
+      svg.appendChild(path);
+
+      const row = document.createElement('div');
+      row.style.display = 'flex'; row.style.alignItems = 'center'; row.style.gap = '8px';
+      const sw = document.createElement('div'); sw.style.width='12px'; sw.style.height='12px'; sw.style.background = colors[idx % colors.length]; sw.style.borderRadius='3px';
+      const lab = document.createElement('div'); lab.textContent = `${cat.label} — ${cat.count} (${Math.round((cat.count/total)*100)}%)`;
+      row.appendChild(sw); row.appendChild(lab);
+      legend.appendChild(row);
+
+      start = end;
+    });
+
+    const inner = document.createElementNS('http://www.w3.org/2000/svg','circle');
+    inner.setAttribute('cx', cx); inner.setAttribute('cy', cy); inner.setAttribute('r', Math.round(r*0.48)); inner.setAttribute('fill','#fff');
+    svg.appendChild(inner);
+  }
+
   /* =========================
      View panel
   ========================= */
@@ -1243,6 +1403,10 @@
       const svg = document.getElementById('pieChart'); if(svg) svg.innerHTML = '';
       const legend = document.getElementById('pieLegend'); if(legend) legend.innerHTML = '';
     }
+
+    // Draw donuts (zone / unit) based on current filters and selected formation
+    try{ drawZoneDonut(); }catch(e){ console.warn('Zone donut error', e); }
+    try{ drawUnitDonut(); }catch(e){ console.warn('Unit donut error', e); }
 
     v_agentsList.innerHTML = "";
     agents.forEach(a=>{
