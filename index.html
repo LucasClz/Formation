@@ -464,22 +464,27 @@
               <div class="bar" style="margin-top:8px;"><div id="v_unitBar"></div></div>
             </div>
 
-            <!-- Donuts : par zone et par unité (2 lignes) -->
-            <div id="zoneUnitDonuts" style="margin-top:14px; display:flex; flex-direction:column; gap:18px; align-items:flex-start;">
-              <div style="width:100%;">
-                <div style="font-weight:900; margin-bottom:8px;">Camembert — Agents formés par zone</div>
-                <div style="display:flex; gap:12px; align-items:center;">
-                  <svg id="zoneDonut" width="160" height="160" viewBox="0 0 160 160" aria-hidden="true"></svg>
-                  <div id="zoneLegend" style="display:flex; flex-direction:column; gap:6px; font-size:13px; max-height:160px; overflow:auto;"></div>
-                </div>
+            <!-- Camembert zone (visible en mode Vue + Toutes les formations + zone sélectionnée) -->
+            <div id="pieContainer" style="margin-top:14px; display:none;">
+              <div style="font-weight:900;">Camembert — Répartition par formation (zone sélectionnée)</div>
+              <div style="display:flex; gap:12px; align-items:center; margin-top:8px;">
+                <svg id="pieChart" width="160" height="160" viewBox="0 0 160 160" aria-hidden="true"></svg>
+                <div id="pieLegend" style="display:flex; flex-direction:column; gap:6px; font-size:13px;"></div>
               </div>
+            </div>
 
-              <div style="width:100%;">
-                <div style="font-weight:900; margin-bottom:8px;">Camembert — Agents formés par unité</div>
-                <div style="display:flex; gap:12px; align-items:center;">
-                  <svg id="unitDonut" width="140" height="140" viewBox="0 0 140 140" aria-hidden="true"></svg>
-                  <div id="unitLegend" style="display:flex; flex-direction:column; gap:6px; font-size:13px; max-height:140px; overflow:auto;"></div>
-                </div>
+            <!-- Bouton pour afficher le camembert par unité -->
+            <div style="margin-top:12px; display:flex; gap:8px; align-items:center;">
+              <button id="toggleUnitDonutBtn" class="ghost">Afficher camembert Unité</button>
+              <div class="muted">(visible uniquement sur demande)</div>
+            </div>
+
+            <!-- Camembert par unité (hidden by default, toggled by button) -->
+            <div id="unitDonutContainer" style="margin-top:12px; display:none;">
+              <div style="font-weight:900; margin-bottom:8px;">Camembert — Agents formés par unité</div>
+              <div style="display:flex; gap:12px; align-items:center;">
+                <svg id="unitDonut" width="140" height="140" viewBox="0 0 140 140" aria-hidden="true"></svg>
+                <div id="unitLegend" style="display:flex; flex-direction:column; gap:6px; font-size:13px; max-height:140px; overflow:auto;"></div>
               </div>
             </div>
 
@@ -666,6 +671,8 @@
 
   // Unit filter
   const unitFilter = document.getElementById("unitFilter");
+  const toggleUnitDonutBtn = document.getElementById("toggleUnitDonutBtn");
+  const unitDonutContainer = document.getElementById("unitDonutContainer");
 
   /* =========================
      Load Zone.json
@@ -1174,6 +1181,45 @@
     inner.setAttribute('fill', '#ffffff');
     svg.appendChild(inner);
   }
+  
+  // Draw unit pie for selected zone's unit (distribution of formations within that unit)
+  function drawUnitDonutForSelectedUnit(){
+    const svg = document.getElementById('unitDonut');
+    const legend = document.getElementById('unitLegend');
+    if(!svg || !legend) return;
+    svg.innerHTML = ''; legend.innerHTML = '';
+
+    const zone = getSelectedZone();
+    if(!zone) return;
+    const unit = zone.unit || '(Aucune)';
+
+    // collect agents from zones matching this unit
+    let agents = [];
+    state.zones.forEach(z=>{ if(String(z.unit||'(Aucune)') === String(unit)){ agents.push(...(z.agents||[])); }});
+
+    // apply vacation/shift filters similarly to view
+    agents = agents.filter(a=>{
+      const okV = (vacationFilter.value === 'ALL') || (a.vacation === vacationFilter.value);
+      const okS = (shiftFilter.value === 'ALL') || (a.shift === shiftFilter.value);
+      return okV && okS;
+    });
+
+    // Count by formation priority (exclusive categories as in drawPieChart)
+    const cats = [
+      { key: 'GF-SF', label: 'GF-SF', color: '#FFC95A', count: 0 },
+      { key: 'EPI', label: 'EPI', color: '#00A3E0', count: 0 },
+      { key: 'Extincteur', label: 'Extincteur', color: '#0B77C5', count: 0 },
+      { key: 'Aucun', label: 'Aucun', color: '#d1d5db', count: 0 }
+    ];
+    agents.forEach(a=>{ if(a.trainings?.['GF-SF']) cats[0].count++; else if(a.trainings?.['EPI']) cats[1].count++; else if(a.trainings?.['Extincteur']) cats[2].count++; else cats[3].count++; });
+
+    const total = cats.reduce((s,c)=>s+c.count,0);
+    if(total === 0){ const txt = document.createElementNS('http://www.w3.org/2000/svg','text'); txt.setAttribute('x',70); txt.setAttribute('y',75); txt.setAttribute('text-anchor','middle'); txt.setAttribute('fill','#6b7280'); txt.setAttribute('font-size','12'); txt.textContent = 'Aucun agent formé'; svg.appendChild(txt); return; }
+
+    const cx = 70, cy = 70, r = 60; let start = -Math.PI/2;
+    cats.forEach(cat=>{ if(cat.count===0) return; const angle = (cat.count/total)*Math.PI*2; const end = start + angle; const spt = polarToCartesian(cx, cy, r, start); const ept = polarToCartesian(cx, cy, r, end); const largeArc = angle>Math.PI?1:0; const d = [`M ${cx} ${cy}`, `L ${spt.x} ${spt.y}`, `A ${r} ${r} 0 ${largeArc} 1 ${ept.x} ${ept.y}`, 'Z'].join(' '); const path = document.createElementNS('http://www.w3.org/2000/svg','path'); path.setAttribute('d', d); path.setAttribute('fill', cat.color); path.setAttribute('stroke', '#fff'); path.setAttribute('stroke-width','1'); svg.appendChild(path); const row = document.createElement('div'); row.style.display='flex'; row.style.alignItems='center'; row.style.gap='8px'; const sw = document.createElement('div'); sw.style.width='12px'; sw.style.height='12px'; sw.style.background=cat.color; sw.style.borderRadius='3px'; const lab = document.createElement('div'); lab.textContent = `${cat.label} — ${cat.count} (${Math.round((cat.count/total)*100)}%)`; row.appendChild(sw); row.appendChild(lab); legend.appendChild(row); start = end; });
+    const inner = document.createElementNS('http://www.w3.org/2000/svg','circle'); inner.setAttribute('cx', cx); inner.setAttribute('cy', cy); inner.setAttribute('r', Math.round(r*0.48)); inner.setAttribute('fill','#fff'); svg.appendChild(inner);
+  }
   function filterAgents(zoneAgents){
     const u = unitFilter.value;
     const v = vacationFilter.value;
@@ -1382,13 +1428,21 @@
     v_unitBar.style.width = `${unitStats.pct}%`;
     v_unitDetail.textContent = `${unitStats.formed} / ${unitStats.total} agents formés`;
 
-    // Donuts (zone / unit) are always shown below
-    const zoneUnitDonuts = document.getElementById('zoneUnitDonuts');
-    if(zoneUnitDonuts) zoneUnitDonuts.style.display = 'flex';
+    // Pie for selected zone: visible only in view + "Toutes les formations"
+    const pieContainer = document.getElementById('pieContainer');
+    if(activeTab === 'view' && formation === 'ALL' && zone){
+      if(pieContainer) pieContainer.style.display = 'block';
+      try{ drawPieChart(filteredAgents); }catch(e){ console.warn('drawPieChart error', e); }
+    } else {
+      if(pieContainer) pieContainer.style.display = 'none';
+      const pc = document.getElementById('pieChart'); if(pc) pc.innerHTML = '';
+      const pl = document.getElementById('pieLegend'); if(pl) pl.innerHTML = '';
+    }
 
-    // Draw donuts (zone / unit) based on current filters and selected formation
-    try{ drawZoneDonut(); }catch(e){ console.warn('Zone donut error', e); }
-    try{ drawUnitDonut(); }catch(e){ console.warn('Unit donut error', e); }
+    // If unit donut container is visible, redraw for current selection
+    if(unitDonutContainer && unitDonutContainer.style.display !== 'none'){
+      try{ drawUnitDonutForSelectedUnit(); }catch(e){ console.warn('drawUnitDonutForSelectedUnit error', e); }
+    }
 
     v_agentsList.innerHTML = "";
     agents.forEach(a=>{
@@ -1524,6 +1578,21 @@
       selectedZoneIndex = Number(val);
       renderZones();
       updatePanels();
+    });
+  }
+
+  if(toggleUnitDonutBtn){
+    toggleUnitDonutBtn.addEventListener('click', ()=>{
+      if(!unitDonutContainer) return;
+      const showing = unitDonutContainer.style.display !== 'none';
+      if(showing){
+        unitDonutContainer.style.display = 'none';
+        toggleUnitDonutBtn.textContent = 'Afficher camembert Unité';
+      } else {
+        unitDonutContainer.style.display = 'block';
+        toggleUnitDonutBtn.textContent = 'Masquer camembert Unité';
+        try{ drawUnitDonutForSelectedUnit(); }catch(e){ console.warn('drawUnitDonutForSelectedUnit error', e); }
+      }
     });
   }
 
