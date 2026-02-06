@@ -562,6 +562,18 @@
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
   <script>
+  // Global error handler to surface JS errors in the UI for debugging
+  window.addEventListener('error', function(ev){
+    try{
+      const txt = document.getElementById('loadStatusText');
+      if(txt) txt.textContent = 'Erreur JS: ' + (ev.message || ev.error && ev.error.message || ev.filename || 'inconnu');
+    }catch(e){}
+    console.error('Unhandled error', ev.error || ev.message, ev);
+  });
+  window.addEventListener('unhandledrejection', function(ev){
+    try{ const txt = document.getElementById('loadStatusText'); if(txt) txt.textContent = 'Promise rejection: ' + (ev.reason && ev.reason.message || ev.reason || 'inconnu'); }catch(e){}
+    console.error('Unhandled rejection', ev.reason);
+  });
   /* =========================
      Data
   ========================= */
