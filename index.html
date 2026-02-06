@@ -312,6 +312,20 @@
       .app{ grid-template-columns: 1fr; height:auto; }
       .panel{ height:auto; }
     }
+    /* Pie tooltip */
+    .pie-tooltip{
+      position: absolute;
+      pointer-events: none;
+      background: rgba(17,24,39,0.95);
+      color: #fff;
+      padding: 6px 8px;
+      border-radius: 6px;
+      font-size: 12px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.25);
+      z-index: 9999;
+      transform: translate(-50%, -120%);
+      white-space: nowrap;
+    }
   </style>
 </head>
 
@@ -1094,6 +1108,27 @@
       const path = document.createElementNS('http://www.w3.org/2000/svg','path');
       path.setAttribute('d', d);
       path.setAttribute('fill', cat.color);
+      path.setAttribute('stroke', '#ffffff');
+      path.setAttribute('stroke-width', '1');
+      path.style.cursor = 'pointer';
+      // tooltip handlers
+      const percent = Math.round((cat.count/total)*100);
+      path.addEventListener('mouseenter', (ev)=>{
+        let tip = document.getElementById('pieTooltip');
+        if(!tip){ tip = document.createElement('div'); tip.id = 'pieTooltip'; tip.className = 'pie-tooltip'; document.body.appendChild(tip); }
+        tip.innerHTML = `<strong>${cat.label}</strong> — ${cat.count} (${percent}%)`;
+        tip.style.display = 'block';
+        tip.style.left = (ev.pageX) + 'px';
+        tip.style.top = (ev.pageY) + 'px';
+      });
+      path.addEventListener('mousemove', (ev)=>{
+        const tip = document.getElementById('pieTooltip');
+        if(tip){ tip.style.left = (ev.pageX) + 'px'; tip.style.top = (ev.pageY) + 'px'; }
+      });
+      path.addEventListener('mouseleave', ()=>{
+        const tip = document.getElementById('pieTooltip');
+        if(tip) tip.style.display = 'none';
+      });
       svg.appendChild(path);
 
       // legend
@@ -1102,12 +1137,20 @@
       const sw = document.createElement('div');
       sw.style.width = '14px'; sw.style.height = '14px'; sw.style.background = cat.color; sw.style.borderRadius = '3px';
       const lab = document.createElement('div');
-      lab.textContent = `${cat.label} — ${cat.count}`;
+      const pct = Math.round((cat.count/total)*100);
+      lab.textContent = `${cat.label} — ${cat.count} (${pct}%)`;
       row.appendChild(sw); row.appendChild(lab);
       legend.appendChild(row);
 
       startAngle = endAngle;
     });
+    // draw inner circle to create donut
+    const inner = document.createElementNS('http://www.w3.org/2000/svg','circle');
+    inner.setAttribute('cx', cx);
+    inner.setAttribute('cy', cy);
+    inner.setAttribute('r', Math.round(r * 0.45));
+    inner.setAttribute('fill', '#ffffff');
+    svg.appendChild(inner);
   }
   function filterAgents(zoneAgents){
     const u = unitFilter.value;
