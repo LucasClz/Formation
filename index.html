@@ -471,6 +471,7 @@
                 <svg id="pieChart" width="160" height="160" viewBox="0 0 160 160" aria-hidden="true"></svg>
                 <div id="pieLegend" style="display:flex; flex-direction:column; gap:6px; font-size:13px;"></div>
               </div>
+              <div id="pieSummary" style="margin-top:8px; font-size:13px; color: var(--muted);"></div>
             </div>
 
             <!-- Bouton pour afficher le camembert par unité -->
@@ -1117,6 +1118,7 @@
       txt.setAttribute('x',80); txt.setAttribute('y',85); txt.setAttribute('text-anchor','middle'); txt.setAttribute('fill','#6b7280');
       txt.setAttribute('font-size','12'); txt.textContent = 'Aucun agent';
       svg.appendChild(txt);
+      const summary = document.getElementById('pieSummary'); if(summary) summary.innerHTML = cats.map(c=>`<div>${c.label}: ${c.count} (${Math.round((c.count/Math.max(1,total))*100)}%)</div>`).join('');
       return;
     }
 
@@ -1180,6 +1182,7 @@
     inner.setAttribute('r', Math.round(r * 0.45));
     inner.setAttribute('fill', '#ffffff');
     svg.appendChild(inner);
+    const summary = document.getElementById('pieSummary'); if(summary) summary.innerHTML = cats.map(c=>`<div>${c.label}: ${c.count} (${Math.round((c.count/total)*100)}%)</div>`).join('');
   }
   
   // Draw unit pie for selected zone's unit (distribution of formations within that unit)
