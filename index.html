@@ -1249,14 +1249,25 @@
     // Pie chart when 'Toutes les formations' is selected
     const pieContainer = document.getElementById('pieContainer');
     if(formation === 'ALL'){
-      if(pieContainer) pieContainer.style.display = 'block';
-      // aggregate filtered agents across all zones (respect unit/vacation/shift filters)
-      const globalFiltered = [];
-      state.zones.forEach(z => {
-        const fa = filterAgents(z.agents || []);
-        if(fa && fa.length) globalFiltered.push(...fa);
-      });
-      drawPieChart(globalFiltered);
+      // Determine which agents to use for the pie:
+      // - if a zone is selected -> use that zone's filtered agents
+      // - otherwise -> aggregate filtered agents across all zones
+      let pieAgents = [];
+      if(zone){
+        pieAgents = filterAgents(zone.agents || []);
+      } else {
+        state.zones.forEach(z => { pieAgents.push(...filterAgents(z.agents || [])); });
+      }
+
+      if(pieContainer) pieContainer.style.display = pieAgents.length ? 'block' : 'none';
+      drawPieChart(pieAgents);
+
+      // Debug info for visibility troubleshooting
+      try{
+        const svg = document.getElementById('pieChart');
+        const debugMsg = ` — Camembert agents: ${pieAgents.length}; SVG enfants: ${svg ? svg.childElementCount : 0}`;
+        const txt = document.getElementById('loadStatusText'); if(txt) txt.textContent += debugMsg;
+      }catch(e){}
     } else {
       if(pieContainer) pieContainer.style.display = 'none';
       // clear pie if any
