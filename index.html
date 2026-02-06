@@ -53,96 +53,96 @@
       height:46px;
       background: var(--top2);
       border-bottom:1px solid #dcdcdc;
-        const canvas = document.getElementById('pieCanvas');
-        const legend = document.getElementById('pieLegend');
-        if(!canvas || !legend) return;
-        const ctx = canvas.getContext('2d');
-        ctx.clearRect(0,0,canvas.width, canvas.height);
-        legend.innerHTML = '';
+      display:flex;
+      align-items:center;
+      gap:12px;
+      padding: 0 18px;
+      overflow:auto;
+      white-space:nowrap;
+    }
+    .navlink{
+      display:inline-flex;
+      align-items:center;
+      padding:8px 12px;
+      border-radius:10px;
+      font-weight:900;
+      color:#2f3b4a;
+      border:1px solid transparent;
+      cursor:pointer;
+      user-select:none;
+    }
+    .navlink:hover{ background:#f3f4f6; }
+    .navlink.active{
+      background: rgba(11,119,197,.08);
+      border-color: rgba(11,119,197,.25);
+      color: var(--blue);
+    }
+    .sep{ color:#9aa3af; font-weight:900; }
 
-        // categories with priority GF-SF -> EPI -> Extincteur -> Aucun
-        const cats = [
-          { key: 'GF-SF', label: 'GF-SF', color: '#FFC95A', count: 0 },
-          { key: 'EPI', label: 'EPI', color: '#00A3E0', count: 0 },
-          { key: 'Extincteur', label: 'Extincteur', color: '#0B77C5', count: 0 },
-          { key: 'Aucun', label: 'Aucun', color: '#d1d5db', count: 0 }
-        ];
-
-        agents.forEach(a => {
-          if(a.trainings?.['GF-SF']) cats[0].count++;
-          else if(a.trainings?.['EPI']) cats[1].count++;
-          else if(a.trainings?.['Extincteur']) cats[2].count++;
-          else cats[3].count++;
-        });
-
-        const total = cats.reduce((s,c)=>s+c.count, 0);
-        const cx = canvas.width/2, cy = canvas.height/2, r = Math.min(cx,cy) - 6;
-
-        if(total === 0){
-          ctx.fillStyle = '#6b7280';
-          ctx.font = '12px sans-serif';
-          ctx.textAlign = 'center';
-          ctx.fillText('Aucun agent', cx, cy + 4);
-          return;
-        }
-
-        // Build arcs and draw
-        let startAngle = -Math.PI/2;
-        const segments = [];
-        cats.forEach(cat=>{
-          if(cat.count === 0) return;
-          const angle = (cat.count/total) * Math.PI * 2;
-          const endAngle = startAngle + angle;
-          // draw arc
-          ctx.beginPath();
-          ctx.moveTo(cx, cy);
-          ctx.arc(cx, cy, r, startAngle, endAngle, false);
-          ctx.closePath();
-          ctx.fillStyle = cat.color;
-          ctx.fill();
-          // white stroke to separate
-          ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1; ctx.stroke();
-
-          segments.push({ start: startAngle, end: endAngle, cat });
-          startAngle = endAngle;
-        });
-
-        // draw inner white circle to make donut
-        ctx.beginPath(); ctx.arc(cx, cy, r*0.45, 0, Math.PI*2); ctx.fillStyle = '#ffffff'; ctx.fill(); ctx.strokeStyle = '#e5e7eb'; ctx.lineWidth = 1; ctx.stroke();
-        // center label
-        ctx.fillStyle = '#374151'; ctx.font = '700 14px sans-serif'; ctx.textAlign = 'center'; ctx.fillText(String(total), cx, cy + 6);
-
-        // legend
-        cats.forEach(cat=>{ if(cat.count===0) return; const row = document.createElement('div'); row.style.display='flex'; row.style.alignItems='center'; row.style.gap='8px'; const sw=document.createElement('div'); sw.style.width='14px'; sw.style.height='14px'; sw.style.background=cat.color; sw.style.borderRadius='3px'; const lab=document.createElement('div'); const pct=Math.round((cat.count/total)*100); lab.textContent = `${cat.label} — ${cat.count} (${pct}%)`; row.appendChild(sw); row.appendChild(lab); legend.appendChild(row); });
-
-        // tooltip handling: hit-test by angle and distance
-        let currentHover = null;
-        canvas.onmousemove = function(ev){
-          const rect = canvas.getBoundingClientRect();
-          const x = ev.clientX - rect.left; const y = ev.clientY - rect.top;
-          const dx = x - cx, dy = y - cy; const dist = Math.sqrt(dx*dx + dy*dy);
-          if(dist < r*0.45 || dist > r){
-            // outside donut band
-            hidePieTooltip(); currentHover = null; return;
-          }
-          const ang = Math.atan2(dy, dx); // -PI..PI
-          // convert to same start base (-PI/2)
-          let a = ang; if(a < -Math.PI/2) a += Math.PI*2; // normalize
-          // find segment
-          const seg = segments.find(s => a >= s.start && a <= s.end);
-          if(!seg){ hidePieTooltip(); currentHover = null; return; }
-          if(currentHover === seg) return;
-          currentHover = seg;
-          showPieTooltip(ev.clientX, ev.clientY, `${seg.cat.label} — ${seg.cat.count} (${Math.round((seg.cat.count/total)*100)}%)`);
-        };
-        canvas.onmouseleave = function(){ hidePieTooltip(); currentHover = null; };
-
-        function showPieTooltip(pageX, pageY, html){
-          let tip = document.getElementById('pieTooltip');
-          if(!tip){ tip = document.createElement('div'); tip.id = 'pieTooltip'; tip.className = 'pie-tooltip'; document.body.appendChild(tip); }
-          tip.innerHTML = html; tip.style.display='block'; tip.style.left = pageX + 'px'; tip.style.top = pageY + 'px';
-        }
-        function hidePieTooltip(){ const t = document.getElementById('pieTooltip'); if(t) t.style.display='none'; }
+    /* App */
+    .app{
+      display:grid;
+      grid-template-columns: 1fr 440px;
+      gap:16px;
+      padding:16px;
+      height: calc(100vh - 70px - 46px);
+    }
+    .canvasWrap{
+      position:relative;
+      border-radius:12px;
+      overflow:hidden;
+      min-height: 520px;
+    }
+    .toolbar{
+      position:absolute;
+      top:14px;
+      left:14px;
+      z-index:5;
+      background: rgba(255,255,255,.92);
+      border:1px solid var(--border);
+      border-radius:12px;
+      padding:10px 12px;
+      display:flex;
+      gap:10px;
+      align-items:center;
+      flex-wrap:wrap;
+      box-shadow: 0 10px 24px rgba(0,0,0,.08);
+      max-width: calc(100% - 28px);
+    }
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding:6px 10px;
+      border-radius:999px;
+      border:1px solid var(--border);
+      background:#fff;
+      font-size:12px;
+      color: var(--muted);
+      white-space:nowrap;
+    }
+    label.small{
+      font-size:12px;
+      color: var(--muted);
+      font-weight:900;
+    }
+    select, button, input{
+      border:1px solid var(--border);
+      border-radius:10px;
+      padding:8px 10px;
+      background:#fff;
+      color: var(--text);
+      outline:none;
+      font-weight:700;
+    }
+    select:focus, input:focus{
+      box-shadow: 0 0 0 3px rgba(11,119,197,.15);
+      border-color: rgba(11,119,197,.35);
+    }
+    button{
+      cursor:pointer;
+      background: var(--blue);
+      border-color: rgba(11,119,197,.25);
       color:#fff;
       transition:.12s;
       font-weight:900;
@@ -326,8 +326,6 @@
       transform: translate(-50%, -120%);
       white-space: nowrap;
     }
-    /* Force pie svg size so global svg rule doesn't stretch it */
-    #pieChart{ width:160px !important; height:160px !important; flex:0 0 160px; background:transparent !important; }
   </style>
 </head>
 
@@ -470,7 +468,7 @@
             <div id="pieContainer" style="margin-top:14px; display:none;">
               <div style="font-weight:900;">Répartition par formation</div>
               <div style="display:flex; gap:12px; align-items:center; margin-top:8px;">
-                <canvas id="pieCanvas" width="160" height="160" aria-hidden="true"></canvas>
+                <svg id="pieChart" width="160" height="160" viewBox="0 0 160 160" aria-hidden="true"></svg>
                 <div id="pieLegend" style="display:flex; flex-direction:column; gap:6px; font-size:13px;"></div>
               </div>
             </div>
@@ -1124,7 +1122,6 @@
       path.setAttribute('fill', cat.color);
       path.setAttribute('stroke', '#ffffff');
       path.setAttribute('stroke-width', '1');
-      path.style.opacity = '0.98';
       path.style.cursor = 'pointer';
       // tooltip handlers
       const percent = Math.round((cat.count/total)*100);
@@ -1165,19 +1162,7 @@
     inner.setAttribute('cy', cy);
     inner.setAttribute('r', Math.round(r * 0.45));
     inner.setAttribute('fill', '#ffffff');
-    inner.setAttribute('stroke', '#e5e7eb');
-    inner.setAttribute('stroke-width', '1');
     svg.appendChild(inner);
-    // center label (total)
-    const lbl = document.createElementNS('http://www.w3.org/2000/svg','text');
-    lbl.setAttribute('x', cx);
-    lbl.setAttribute('y', cy + 6);
-    lbl.setAttribute('text-anchor', 'middle');
-    lbl.setAttribute('fill', '#374151');
-    lbl.setAttribute('font-size', '14');
-    lbl.setAttribute('font-weight', '700');
-    lbl.textContent = String(total);
-    svg.appendChild(lbl);
   }
   function filterAgents(zoneAgents){
     const u = unitFilter.value;
@@ -1196,38 +1181,23 @@
   ========================= */
   function updateViewPanel(){
     const zone = getSelectedZone();
-    const formation = formationSelect.value;
-
-    // If no specific zone is selected but the user asked for "Toutes les formations",
-    // show a global view aggregating agents from all zones (subject to filters).
-    let agents = [];
-    if(!zone && formation === 'ALL'){
-      // aggregate agents across all zones
-      state.zones.forEach(z => { agents.push(...(z.agents || [])); });
-      // show the view panel for global stats
-      emptyView.style.display = "none";
-      viewPanel.style.display = "block";
-      if(viewZoneSelect) viewZoneSelect.value = "";
-      v_zoneName.textContent = 'Global';
-      v_zoneCount.textContent = agents.length;
-    } else {
-      if(!zone){
-        emptyView.style.display = "block";
-        viewPanel.style.display = "none";
-        return;
-      }
-      emptyView.style.display = "none";
-      viewPanel.style.display = "block";
-
-      if(viewZoneSelect){
-        viewZoneSelect.value = (selectedZoneIndex !== null) ? String(selectedZoneIndex) : "";
-      }
-
-      agents = zone.agents || [];
-      v_zoneName.textContent = zone.name || "(sans nom)";
-      v_zoneCount.textContent = agents.length;
+    if(!zone){
+      emptyView.style.display = "block";
+      viewPanel.style.display = "none";
+      return;
     }
-    // (zone name & count already set inside the branch above)
+    emptyView.style.display = "none";
+    viewPanel.style.display = "block";
+
+    if(viewZoneSelect){
+      viewZoneSelect.value = (selectedZoneIndex !== null) ? String(selectedZoneIndex) : "";
+    }
+
+    const agents = zone.agents || [];
+    v_zoneName.textContent = zone.name || "(sans nom)";
+    v_zoneCount.textContent = agents.length;
+
+    const formation = formationSelect.value;
 
     const totalStats = computeStats(agents, formation);
     v_totalLabel.textContent = `Total (${formation})`;
@@ -1264,25 +1234,9 @@
     // Pie chart when 'Toutes les formations' is selected
     const pieContainer = document.getElementById('pieContainer');
     if(formation === 'ALL'){
-      // Determine which agents to use for the pie:
-      // - if a zone is selected -> use that zone's filtered agents
-      // - otherwise -> aggregate filtered agents across all zones
-      let pieAgents = [];
-      if(zone){
-        pieAgents = filterAgents(zone.agents || []);
-      } else {
-        state.zones.forEach(z => { pieAgents.push(...filterAgents(z.agents || [])); });
-      }
-
-      if(pieContainer) pieContainer.style.display = pieAgents.length ? 'block' : 'none';
-      drawPieChart(pieAgents);
-
-      // Debug info for visibility troubleshooting
-      try{
-        const svg = document.getElementById('pieChart');
-        const debugMsg = ` — Camembert agents: ${pieAgents.length}; SVG enfants: ${svg ? svg.childElementCount : 0}`;
-        const txt = document.getElementById('loadStatusText'); if(txt) txt.textContent += debugMsg;
-      }catch(e){}
+      if(pieContainer) pieContainer.style.display = 'block';
+      // use filteredAgents (applies vacation/unit/shift filters) to compute pie
+      drawPieChart(filteredAgents);
     } else {
       if(pieContainer) pieContainer.style.display = 'none';
       // clear pie if any
