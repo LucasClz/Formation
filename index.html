@@ -522,6 +522,15 @@
             <label class="small">Nom de zone</label>
             <input id="zoneNameInput" placeholder="Ex: Atelier A" />
             
+            <label class="small">Numéro bâtiment</label>
+            <input id="zoneBuildingInput" placeholder="Ex: 12" />
+
+            <label class="small">Sous-zone (polygone)</label>
+            <select id="polygonSelect"></select>
+
+            <label class="small">Nom sous-zone</label>
+            <input id="polygonNameInput" placeholder="Ex: Cellule 1" />
+
             <label class="small">Unité Opérationnelle</label>
             <select id="zoneUnitSelect">
               <option value="">(Aucune)</option>
@@ -612,6 +621,7 @@
   let activeTab = "view";
   // Use index for selection (no permanent IDs on zones)
   let selectedZoneIndex = null;
+  let selectedPolygonIndex = null; // when a zone has multiple polygons, which polygon is active
 
   let isDrawing = false;
   let draftPoints = [];
@@ -667,6 +677,9 @@
   const viewZoneSelect = document.getElementById("viewZoneSelect");
   const zoneNameInput = document.getElementById("zoneNameInput");
   const zoneUnitSelect = document.getElementById("zoneUnitSelect");
+  const zoneBuildingInput = document.getElementById("zoneBuildingInput");
+  const polygonSelect = document.getElementById("polygonSelect");
+  const polygonNameInput = document.getElementById("polygonNameInput");
   const newZoneBtn = document.getElementById("newZoneBtn");
   const deleteZoneBtn = document.getElementById("deleteZoneBtn");
   const exportJsonBtn = document.getElementById("exportJsonBtn");
@@ -699,14 +712,17 @@
 
       state.zones = zones.map((z, i) => ({
         name: String(z.name || "(sans nom)"),
-        polygons: (z.polygons && Array.isArray(z.polygons)) 
-          ? z.polygons.map(p => String(p || ""))
-          : (z.points ? [String(z.points || "")] : []), // conversion ancien format
+        building: z.building || z.buildingNumber || null,
+        // polygons stored as objects { points, subName } for per-polygon metadata
+        polygons: (z.polygons && Array.isArray(z.polygons))
+          ? z.polygons.map(p => (typeof p === 'string' ? { points: String(p || ''), subName: null } : { points: String(p.points || ''), subName: p.subName || null }))
+          : (z.points ? [{ points: String(z.points || ''), subName: null }] : []),
         unit: z.unit || null,
         agents: Array.isArray(z.agents) ? z.agents.map(a => ({
           name: String(a.name || ""),
           shift: String(a.shift || ""),
           vacation: (a.vacation === "A" || a.vacation === "B") ? a.vacation : "A",
+          unit: a.unit || null,
           trainings: normalizeTrainings(a.trainings || {})
         })) : []
       }));
@@ -721,7 +737,7 @@
         { name: 'Bob', shift: '4h - 12h', vacation: 'B', unit: 'PRM', trainings: normalizeTrainings({ 'GF-SF': false, 'EPI': true, 'Extincteur': true }) },
         { name: 'Claire', shift: '20h - 4h', vacation: 'A', unit: 'BA', trainings: normalizeTrainings({ 'GF-SF': false, 'EPI': false, 'Extincteur': false }) }
       ];
-      state.zones = [{ name: 'Exemple', polygons: [], unit: null, agents: sampleAgents }];
+      state.zones = [{ name: 'Exemple', building: '1', polygons: [], unit: null, agents: sampleAgents }];
       console.warn(`Zone.json introuvable — affichage d'exemple (${e.message}).`);
     }
 
@@ -892,6 +908,7 @@
 
   if(deselectBtn) deselectBtn.addEventListener("click", ()=>{
     selectedZoneIndex = null;
+    selectedPolygonIndex = null;
     stopDrawing(false);
     renderZones();
     updatePanels();
@@ -1182,13 +1199,18 @@
       
       // Afficher tous les polygones de la zone
       let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-      polygons.forEach((pointsStr, polyIdx)=>{
+      polygons.forEach((polyItem, polyIdx)=>{
+        const pointsStr = (typeof polyItem === 'string') ? polyItem : (polyItem && polyItem.points) ? polyItem.points : '';
+        const subName = (typeof polyItem === 'object' && polyItem) ? (polyItem.subName || null) : null;
         const poly = svgEl("polygon");
         poly.setAttribute("points", pointsStr || "");
-        poly.setAttribute("class", "zonePoly" + (isSelected ? " selected" : ""));
+        // mark selected polygon if zone selected and polygon index matches
+        const isPolySelected = isSelected && (selectedPolygonIndex === null ? true : selectedPolygonIndex === polyIdx);
+        poly.setAttribute("class", "zonePoly" + (isPolySelected ? " selected" : ""));
         poly.addEventListener("click", (e)=>{
           e.stopPropagation();
           selectedZoneIndex = i;
+          selectedPolygonIndex = polyIdx;
           if(activeTab === "create") syncZoneSelect();
           renderZones();
           updatePanels();
@@ -1203,14 +1225,27 @@
           maxX = Math.max(maxX, p.x);
           maxY = Math.max(maxY, p.y);
         });
+        // add a per-polygon label at its centroid
+        if(pts.length){
+          const cx = (Math.min(...pts.map(pp=>pp.x)) + Math.max(...pts.map(pp=>pp.x))) / 2;
+          const cy = (Math.min(...pts.map(pp=>pp.y)) + Math.max(...pts.map(pp=>pp.y))) / 2;
+          const label = document.createElementNS('http://www.w3.org/2000/svg','text');
+          label.setAttribute('x', String(cx));
+          label.setAttribute('y', String(cy));
+          label.setAttribute('class','zoneLabel');
+          label.textContent = (z.name || '') + (subName ? (' — ' + subName) : '');
+          zonesLayer.appendChild(label);
+        }
       });
     }
 
     if(activeTab === "create" && selectedZoneIndex !== null){
       const zone = getSelectedZone();
       if(zone && zone.polygons && zone.polygons.length > 0){
-        // Afficher les vertices du premier polygone en édition
-        const pts = parsePoints(zone.polygons[0]);
+        // Afficher les vertices du premier polygone en édition (ou le polygone sélectionné)
+        const polyIndexForEdit = (selectedPolygonIndex !== null && typeof selectedPolygonIndex === 'number') ? selectedPolygonIndex : 0;
+        const polyItem = zone.polygons[polyIndexForEdit];
+        const pts = parsePoints(typeof polyItem === 'string' ? polyItem : (polyItem && polyItem.points) ? polyItem.points : '');
         pts.forEach((p, idx)=>{
           const c = svgEl("circle");
           c.setAttribute("cx", p.x);
@@ -1482,7 +1517,7 @@
     viewPanel.style.display = "block";
 
     if(viewZoneSelect){
-      viewZoneSelect.value = (selectedZoneIndex !== null) ? String(selectedZoneIndex) : "";
+      viewZoneSelect.value = (selectedZoneIndex !== null) ? (selectedPolygonIndex !== null ? `${selectedZoneIndex}:${selectedPolygonIndex}` : String(selectedZoneIndex)) : "";
     }
 
     const agents = zone.agents || [];
@@ -1492,7 +1527,15 @@
     const filteredAgents = filterAgents(agents);
     const isFiltering = (vacationFilter.value !== 'ALL' || shiftFilter.value !== 'ALL' || (unitFilter && unitFilter.value !== 'ALL'));
 
-    v_zoneName.textContent = zone.name || "(sans nom)";
+    // Show zone name with building and selected polygon sub-name when applicable
+    let zoneTitle = zone.name || "(sans nom)";
+    if(zone.building) zoneTitle += ` — Bât. ${zone.building}`;
+    if(selectedPolygonIndex !== null && zone.polygons && zone.polygons[selectedPolygonIndex]){
+      const p = zone.polygons[selectedPolygonIndex];
+      const sub = (typeof p === 'object' && p && p.subName) ? p.subName : null;
+      if(sub) zoneTitle += ` / ${sub}`;
+    }
+    v_zoneName.textContent = zoneTitle;
     // color the zone name according to its unit
     try{
       const u = String(zone.unit || '').toUpperCase();
@@ -1653,10 +1696,24 @@
     });
 
     visible.forEach(item=>{
-      const opt = document.createElement("option");
-      opt.value = String(item.idx);
-      opt.textContent = item.name || "(sans nom)";
-      viewZoneSelect.appendChild(opt);
+      const z = state.zones[item.idx];
+      // If zone has polygons, list each polygon as a separate option (zoneIdx:polyIdx)
+      if(z && z.polygons && z.polygons.length){
+        z.polygons.forEach((p, pi)=>{
+          const opt = document.createElement("option");
+          opt.value = `${item.idx}:${pi}`;
+          const sub = (typeof p === 'object' && p && p.subName) ? ` — ${p.subName}` : '';
+          const bld = z.building ? ` (Bât. ${z.building})` : '';
+          opt.textContent = `${item.name || '(sans nom)'}${sub}${bld}`;
+          viewZoneSelect.appendChild(opt);
+        });
+      } else {
+        const opt = document.createElement("option");
+        opt.value = String(item.idx);
+        const bld = state.zones[item.idx] && state.zones[item.idx].building ? ` (Bât. ${state.zones[item.idx].building})` : '';
+        opt.textContent = (item.name || "(sans nom)") + bld;
+        viewZoneSelect.appendChild(opt);
+      }
     });
 
     if(visible.length === 0){
@@ -1667,11 +1724,22 @@
     }
 
     // Keep current selection if it's visible, otherwise select first visible
-    const visibleIdxs = visible.map(v=>v.idx);
-    if(selectedZoneIndex === null || !visibleIdxs.includes(selectedZoneIndex)){
-      selectedZoneIndex = visibleIdxs[0];
+    // If current selection is not visible, pick first visible option
+    const firstOption = viewZoneSelect.options[0];
+    if(!firstOption) { viewZoneSelect.value = ''; selectedZoneIndex = null; selectedPolygonIndex = null; return; }
+    // If previously selected polygon/zone not visible, reset selection to first option
+    const currentVal = viewZoneSelect.querySelector(`option[value="${viewZoneSelect.value}"]`);
+    if(!currentVal){
+      viewZoneSelect.value = firstOption.value;
+      // apply selection to selectedZoneIndex / selectedPolygonIndex
+      const parts = String(viewZoneSelect.value).split(":");
+      selectedZoneIndex = Number(parts[0]);
+      selectedPolygonIndex = parts.length > 1 ? Number(parts[1]) : null;
+    } else {
+      const parts = String(viewZoneSelect.value).split(":");
+      selectedZoneIndex = Number(parts[0]);
+      selectedPolygonIndex = parts.length > 1 ? Number(parts[1]) : null;
     }
-    viewZoneSelect.value = String(selectedZoneIndex);
   }
 
   function updateCreationFields(){
@@ -1684,13 +1752,36 @@
     }
     c_agentsEmpty.style.display = "none";
     zoneNameInput.value = zone.name || "";
+    zoneBuildingInput.value = zone.building || "";
     zoneUnitSelect.value = zone.unit || "";
+    // populate polygon selector for this zone
+    if(polygonSelect){
+      polygonSelect.innerHTML = '';
+      if(zone.polygons && zone.polygons.length){
+        zone.polygons.forEach((p, idx)=>{
+          const opt = document.createElement('option');
+          opt.value = String(idx);
+          const sub = (typeof p === 'object' && p && p.subName) ? ` — ${p.subName}` : '';
+          opt.textContent = `Polygone ${idx+1}${sub}`;
+          polygonSelect.appendChild(opt);
+        });
+        // set selected polygon index if any
+        if(selectedPolygonIndex === null) selectedPolygonIndex = 0;
+        polygonSelect.value = String(selectedPolygonIndex || 0);
+        const currentPoly = zone.polygons[selectedPolygonIndex || 0];
+        polygonNameInput.value = (currentPoly && typeof currentPoly === 'object') ? (currentPoly.subName || '') : '';
+      } else {
+        const opt = document.createElement('option'); opt.value = ''; opt.textContent = '(Aucun polygone)'; polygonSelect.appendChild(opt);
+        polygonNameInput.value = '';
+      }
+    }
     renderAgentsEditor(zone);
     updateDrawStateText();
   }
 
   zoneSelect.addEventListener("change", ()=>{
     selectedZoneIndex = Number(zoneSelect.value);
+    selectedPolygonIndex = null;
     stopDrawing(false);
     renderZones();
     updateCreationFields();
@@ -1701,7 +1792,9 @@
     viewZoneSelect.addEventListener("change", ()=>{
       const val = viewZoneSelect.value;
       if(val === "") return;
-      selectedZoneIndex = Number(val);
+      const parts = String(val).split(":");
+      selectedZoneIndex = Number(parts[0]);
+      selectedPolygonIndex = parts.length > 1 ? Number(parts[1]) : null;
       renderZones();
       updatePanels();
     });
@@ -1716,6 +1809,47 @@
     updatePanels();
   });
 
+  if(zoneBuildingInput){
+    zoneBuildingInput.addEventListener('input', ()=>{
+      const zone = getSelectedZone();
+      if(!zone) return;
+      zone.building = zoneBuildingInput.value.trim() || null;
+      syncZoneSelect();
+      renderZones();
+      updatePanels();
+    });
+  }
+
+  if(polygonSelect){
+    polygonSelect.addEventListener('change', ()=>{
+      const z = getSelectedZone();
+      if(!z) return;
+      const val = polygonSelect.value;
+      if(val === ''){ selectedPolygonIndex = null; }
+      else selectedPolygonIndex = Number(val);
+      renderZones();
+      updateCreationFields();
+      updatePanels();
+    });
+  }
+
+  if(polygonNameInput){
+    polygonNameInput.addEventListener('input', ()=>{
+      const z = getSelectedZone();
+      if(!z) return;
+      if(selectedPolygonIndex === null || !z.polygons || !z.polygons[selectedPolygonIndex]) return;
+      const polyItem = z.polygons[selectedPolygonIndex];
+      if(typeof polyItem === 'string'){
+        // convert to object to store subName
+        z.polygons[selectedPolygonIndex] = { points: polyItem, subName: polygonNameInput.value.trim() };
+      } else {
+        polyItem.subName = polygonNameInput.value.trim() || null;
+      }
+      renderZones();
+      syncZoneSelect();
+    });
+  }
+
   zoneUnitSelect.addEventListener("change", ()=>{
     const zone = getSelectedZone();
     if(!zone) return;
@@ -1727,8 +1861,9 @@
   newZoneBtn.addEventListener("click", ()=>{
     const name = prompt("Nom de la nouvelle zone ?");
     if(!name) return;
-    state.zones.push({ name: name.trim(), polygons: [], unit: null, agents: [] });
+    state.zones.push({ name: name.trim(), building: null, polygons: [], unit: null, agents: [] });
     selectedZoneIndex = state.zones.length - 1;
+    selectedPolygonIndex = null;
     syncZoneSelect();
     renderZones();
     updatePanels();
@@ -1741,6 +1876,7 @@
     // remove by index
     state.zones.splice(selectedZoneIndex, 1);
     selectedZoneIndex = state.zones.length ? 0 : null;
+    selectedPolygonIndex = null;
     stopDrawing(false);
     renderZones();
     syncZoneSelect();
@@ -1750,7 +1886,9 @@
   exportJsonBtn.addEventListener("click", ()=>{
     const exportZones = state.zones.map(z => ({
       name: z.name,
-      polygons: z.polygons || [],
+      building: z.building || null,
+      // Export polygons as objects with points and subName for persistence
+      polygons: (z.polygons || []).map(p => (typeof p === 'string' ? { points: p, subName: null } : { points: p.points || '', subName: p.subName || null })),
       agents: z.agents,
       unit: z.unit || null
     }));
@@ -1778,8 +1916,8 @@
       const newPolygon = draftPoints.map(p=>`${Math.round(p.x)},${Math.round(p.y)}`).join(" ");
       // Initialiser polygons si nécessaire
       if(!zone.polygons) zone.polygons = [];
-      // Ajouter le nouveau polygone à la liste
-      zone.polygons.push(newPolygon);
+      // Ajouter le nouveau polygone à la liste (avec support subName)
+      zone.polygons.push({ points: newPolygon, subName: null });
     }
     isDrawing = false;
     draftPoints = [];
