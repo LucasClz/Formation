@@ -595,6 +595,9 @@
   ========================= */
   const formations = ["GF-SF", "EPI", "Extincteur"];
     const goalPct = 10; // objectif en pourcentage pour qu'une formation soit validée
+  // Chart-specific color mapping (used only by chart rendering functions)
+  // Option B palette: GF-SF (amber), Extincteur (strong red), EPI (teal)
+  const chartColors = { 'GF-SF':'#F6C84C', 'EPI':'#0EA5A4', 'Extincteur':'#D64545' };
   const shifts = ["4h - 12h", "7h45 - 16h30", "20h - 4h"]; // utilisés par les filtres
   const vacations = ["A", "B"];
 
@@ -739,7 +742,7 @@
       return;
     }
 
-    const colors = { 'GF-SF':'#FFC95A', 'EPI':'#00A3E0', 'Extincteur':'#0B77C5' };
+    const colors = chartColors;
     const formationsOrder = ['GF-SF','EPI','Extincteur'];
 
     const cx = 80, cy = 80;
@@ -847,6 +850,10 @@
       const isHidden = v_agentsList.style.display === 'none' || v_agentsList.style.display === '';
       v_agentsList.style.display = isHidden ? 'block' : 'none';
       toggleAgentsBtn.textContent = isHidden ? 'Masquer les agents' : 'Afficher les agents';
+      if(isHidden){
+        // ensure list is populated when shown
+        try{ updateViewPanel(); }catch(e){}
+      }
     });
   }
 
@@ -1245,7 +1252,7 @@
       return;
     }
 
-    const colors = { 'GF-SF':'#FFC95A', 'EPI':'#00A3E0', 'Extincteur':'#0B77C5' };
+    const colors = chartColors;
     const formationsOrder = ['GF-SF','EPI','Extincteur'];
 
     const cx = 80, cy = 80;
@@ -1334,8 +1341,9 @@
     const cx = 80, cy = 80, r = 70;
     let startAngle = -Math.PI/2;
 
+    const formColor = chartColors[formation] || '#00A3E0';
     const slices = [
-      { label: 'Formés', count: formed, color: '#00A3E0' },
+      { label: 'Formés', count: formed, color: formColor },
       { label: 'Non formés', count: notFormed, color: '#d1d5db' }
     ];
 
