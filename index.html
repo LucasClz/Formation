@@ -1225,17 +1225,7 @@
           maxX = Math.max(maxX, p.x);
           maxY = Math.max(maxY, p.y);
         });
-        // add a per-polygon label at its centroid
-        if(pts.length){
-          const cx = (Math.min(...pts.map(pp=>pp.x)) + Math.max(...pts.map(pp=>pp.x))) / 2;
-          const cy = (Math.min(...pts.map(pp=>pp.y)) + Math.max(...pts.map(pp=>pp.y))) / 2;
-          const label = document.createElementNS('http://www.w3.org/2000/svg','text');
-          label.setAttribute('x', String(cx));
-          label.setAttribute('y', String(cy));
-          label.setAttribute('class','zoneLabel');
-          label.textContent = (z.name || '') + (subName ? (' — ' + subName) : '');
-          zonesLayer.appendChild(label);
-        }
+        // (No per-polygon label rendered on the plan to avoid white text overlay)
       });
     }
 
@@ -1517,7 +1507,19 @@
     viewPanel.style.display = "block";
 
     if(viewZoneSelect){
-      viewZoneSelect.value = (selectedZoneIndex !== null) ? (selectedPolygonIndex !== null ? `${selectedZoneIndex}:${selectedPolygonIndex}` : String(selectedZoneIndex)) : "";
+      // Ensure the select has a matching option: if the current zone has polygons,
+      // prefer a zoneIdx:polyIdx value (default to first polygon when none selected).
+      if(selectedZoneIndex !== null){
+        const z = state.zones[selectedZoneIndex];
+        if(z && z.polygons && z.polygons.length){
+          if(selectedPolygonIndex === null) selectedPolygonIndex = 0;
+          viewZoneSelect.value = `${selectedZoneIndex}:${selectedPolygonIndex}`;
+        } else {
+          viewZoneSelect.value = String(selectedZoneIndex);
+        }
+      } else {
+        viewZoneSelect.value = "";
+      }
     }
 
     const agents = zone.agents || [];
