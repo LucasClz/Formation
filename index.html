@@ -857,8 +857,17 @@
       unitChartContainer.style.display = isHidden ? 'block' : 'none';
       toggleUnitChartBtn.textContent = isHidden ? 'Masquer Unité' : 'Afficher Unité';
       if(isHidden){
-        // render chart when becoming visible
-        drawUnitChart(lastUnitAgents);
+        // compute fresh agents for selected unit and render chart when becoming visible
+        const sel = unitFilter && unitFilter.value ? unitFilter.value : 'ALL';
+        const agentsForUnit = getUnitAgents(sel).filter(a=>{
+          const v = vacationFilter && vacationFilter.value ? vacationFilter.value : 'ALL';
+          const s = shiftFilter && shiftFilter.value ? shiftFilter.value : 'ALL';
+          const okV = (v === 'ALL') || (a.vacation === v);
+          const okS = (s === 'ALL') || (a.shift === s);
+          return okV && okS;
+        });
+        lastUnitAgents = agentsForUnit;
+        drawUnitChart(agentsForUnit);
       }
     });
   }
@@ -1189,6 +1198,24 @@
     const pct = total === 0 ? 0 : Math.round((formed/total)*100);
     return { total, formed, pct };
   }
+
+  // Return agents belonging to a given unit (uses zone.unit fallback)
+  function getUnitAgents(selectedUnit){
+    const unit = selectedUnit && selectedUnit !== '' ? selectedUnit : 'ALL';
+    const out = [];
+    if(unit === 'ALL'){
+      state.zones.forEach(z => out.push(...(z.agents || [])));
+      return out;
+    }
+    state.zones.forEach(z => {
+      if(String(z.unit || '') === String(unit)){
+        out.push(...(z.agents || []));
+      } else {
+        out.push(...((z.agents || []).filter(a => String(a.unit || '') === String(unit))));
+      }
+    });
+    return out;
+  }
   
   /* =========================
      Pie chart helpers
@@ -1459,13 +1486,17 @@
     }
 
     // keep unit agents available for unit chart rendering (apply same filters)
-    lastUnitAgents = unitAgents.filter(a => {
-      const v = vacationFilter.value;
-      const s = shiftFilter.value;
+    const sel = unitFilter && unitFilter.value ? unitFilter.value : 'ALL';
+    lastUnitAgents = getUnitAgents(sel).filter(a => {
+      const v = vacationFilter && vacationFilter.value ? vacationFilter.value : 'ALL';
+      const s = shiftFilter && shiftFilter.value ? shiftFilter.value : 'ALL';
       const okV = (v === 'ALL') || (a.vacation === v);
       const okS = (s === 'ALL') || (a.shift === s);
       return okV && okS;
     });
+
+    // If unit chart is visible, re-render it with fresh data
+    try{ if(unitChartContainer && unitChartContainer.style.display === 'block'){ drawUnitChart(lastUnitAgents); } }catch(e){}
 
     // Show only filtered agents in the list when filters are active
     v_agentsList.innerHTML = "";
