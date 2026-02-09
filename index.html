@@ -600,7 +600,7 @@
   const chartColors = { 'GF-SF':'#F6C84C', 'EPI':'#0EA5A4', 'Extincteur':'#D64545' };
   // Unit colors for zone name label
   const unitColors = {
-    'PRM': '#FF6EA1', // rose
+    'PRM': '#D63384', // rose foncé
     'MR':  '#E9D66B', // yellow-beige
     'SC':  '#7FD89D', // light green
     'BA':  '#06B6D4'  // blue-turquoise
@@ -807,6 +807,53 @@
     centerText.setAttribute('fill','#374151'); centerText.setAttribute('font-size','14'); centerText.setAttribute('font-weight','700');
     centerText.textContent = `${total}`;
     svg.appendChild(centerText);
+
+    // Clicking the central number shows the unit agents list (with zone info)
+    try{
+      centerText.style.cursor = 'pointer';
+      centerText.addEventListener('click', ()=>{
+        if(!v_agentsList) return;
+        // agents passed into drawUnitChart are references from state.zones, so we can find their zone
+        v_agentsList.innerHTML = '';
+        agents.forEach(a=>{
+          const box = document.createElement('div');
+          box.className = 'agentBox';
+
+          const zoneObj = state.zones.find(z => Array.isArray(z.agents) && z.agents.includes(a));
+          const zoneName = zoneObj ? zoneObj.name : '(zone inconnue)';
+
+          const top = document.createElement('div');
+          top.className = 'row';
+          top.innerHTML = `<div style="font-weight:900;">${escapeHtml(a.name)}</div><div class="muted">Zone: ${escapeHtml(zoneName)}</div>`;
+          box.appendChild(top);
+
+          const meta = document.createElement('div');
+          meta.className = 'metaLine';
+          meta.innerHTML = `
+            <span class="metaChip"><b>Unité</b> ${escapeHtml(a.unit || '-')}</span>
+            <span class="metaChip"><b>Horaire</b> ${escapeHtml(a.shift || '-')}</span>
+            <span class="metaChip"><b>Vacation</b> ${escapeHtml(a.vacation || '-')}</span>
+          `;
+          box.appendChild(meta);
+
+          const badges = document.createElement('div');
+          badges.className = 'badges';
+          formations.forEach(f=>{
+            const ok = !!a.trainings?.[f];
+            const b = document.createElement('div');
+            b.className = 'badge';
+            b.textContent = `${f} • ${ok ? 'OK' : 'Non'}`;
+            badges.appendChild(b);
+          });
+          box.appendChild(badges);
+
+          v_agentsList.appendChild(box);
+        });
+        // ensure list visible and toggle button reflects state
+        v_agentsList.style.display = 'block';
+        if(toggleAgentsBtn) toggleAgentsBtn.textContent = 'Masquer les agents';
+      });
+    }catch(e){}
   }
 
   /* =========================
