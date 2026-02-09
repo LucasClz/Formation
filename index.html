@@ -1211,7 +1211,12 @@
           e.stopPropagation();
           selectedZoneIndex = i;
           selectedPolygonIndex = polyIdx;
-          if(activeTab === "create") syncZoneSelect();
+          // If we are in creation mode, synchronize creation controls immediately
+          if(activeTab === "create"){
+            try{ syncZoneSelect(); }catch(e){}
+            try{ updateCreationFields(); }catch(e){}
+          }
+          // Always refresh rendering and panels
           renderZones();
           updatePanels();
         });
