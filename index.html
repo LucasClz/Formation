@@ -355,7 +355,7 @@
       <select id="unitFilter_nav">
         <option value="ALL">Vision globale</option>
         <option value="PRM">PRM</option>
-        <option value="QSE">QSE</option>
+        <option value="BA">BA</option>
         <option value="MR">MR</option>
         <option value="SC">SC</option>
       </select>
@@ -526,7 +526,7 @@
             <select id="zoneUnitSelect">
               <option value="">(Aucune)</option>
               <option value="PRM">PRM</option>
-              <option value="QSE">QSE</option>
+              <option value="BA">BA</option>
               <option value="MR">MR</option>
               <option value="SC">SC</option>
             </select>
@@ -598,6 +598,13 @@
   // Chart-specific color mapping (used only by chart rendering functions)
   // Option B palette: GF-SF (amber), Extincteur (strong red), EPI (teal)
   const chartColors = { 'GF-SF':'#F6C84C', 'EPI':'#0EA5A4', 'Extincteur':'#D64545' };
+  // Unit colors for zone name label
+  const unitColors = {
+    'PRM': '#FF6EA1', // rose
+    'MR':  '#E9D66B', // yellow-beige
+    'SC':  '#7FD89D', // light green
+    'BA':  '#06B6D4'  // blue-turquoise
+  };
   const shifts = ["4h - 12h", "7h45 - 16h30", "20h - 4h"]; // utilisés par les filtres
   const vacations = ["A", "B"];
 
@@ -712,7 +719,7 @@
       const sampleAgents = [
         { name: 'Alice', shift: '7h45 - 16h30', vacation: 'A', unit: 'PRM', trainings: normalizeTrainings({ 'GF-SF': true, 'EPI': true, 'Extincteur': false }) },
         { name: 'Bob', shift: '4h - 12h', vacation: 'B', unit: 'PRM', trainings: normalizeTrainings({ 'GF-SF': false, 'EPI': true, 'Extincteur': true }) },
-        { name: 'Claire', shift: '20h - 4h', vacation: 'A', unit: 'QSE', trainings: normalizeTrainings({ 'GF-SF': false, 'EPI': false, 'Extincteur': false }) }
+        { name: 'Claire', shift: '20h - 4h', vacation: 'A', unit: 'BA', trainings: normalizeTrainings({ 'GF-SF': false, 'EPI': false, 'Extincteur': false }) }
       ];
       state.zones = [{ name: 'Exemple', polygons: [], unit: null, agents: sampleAgents }];
       console.warn(`Zone.json introuvable — affichage d'exemple (${e.message}).`);
@@ -1439,6 +1446,15 @@
     const isFiltering = (vacationFilter.value !== 'ALL' || shiftFilter.value !== 'ALL' || (unitFilter && unitFilter.value !== 'ALL'));
 
     v_zoneName.textContent = zone.name || "(sans nom)";
+    // color the zone name according to its unit
+    try{
+      const u = String(zone.unit || '').toUpperCase();
+      if(unitColors[u]){
+        v_zoneName.style.color = unitColors[u];
+      } else {
+        v_zoneName.style.color = '';
+      }
+    }catch(e){ v_zoneName.style.color = ''; }
     v_zoneCount.textContent = isFiltering ? filteredAgents.length : agents.length;
 
     const totalStats = computeStats(agents, formation);
