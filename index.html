@@ -1214,6 +1214,33 @@
           // If we are in creation mode, synchronize creation controls immediately
           if(activeTab === "create"){
             try{ syncZoneSelect(); }catch(e){}
+            // Force-update creation controls to reflect the clicked polygon
+            try{
+              const z = state.zones[i];
+              if(zoneSelect) zoneSelect.value = String(i);
+              if(zoneNameInput) zoneNameInput.value = z.name || '';
+              if(zoneBuildingInput) zoneBuildingInput.value = z.building || '';
+              // populate polygonSelect for this zone and set selection
+              if(polygonSelect){
+                polygonSelect.innerHTML = '';
+                if(z.polygons && z.polygons.length){
+                  z.polygons.forEach((p, idx)=>{
+                    const opt = document.createElement('option'); opt.value = String(idx);
+                    const sub = (typeof p === 'object' && p && p.subName) ? ` — ${p.subName}` : '';
+                    opt.textContent = `Polygone ${idx+1}${sub}`;
+                    polygonSelect.appendChild(opt);
+                  });
+                  polygonSelect.value = String(polyIdx);
+                } else {
+                  const opt = document.createElement('option'); opt.value = ''; opt.textContent = '(Aucun polygone)'; polygonSelect.appendChild(opt);
+                }
+              }
+              // set polygon name input
+              if(polygonNameInput){
+                const pitem = (z.polygons && z.polygons[polyIdx]) ? z.polygons[polyIdx] : null;
+                polygonNameInput.value = (pitem && typeof pitem === 'object') ? (pitem.subName || '') : '';
+              }
+            }catch(e){}
             try{ updateCreationFields(); }catch(e){}
           }
           // Always refresh rendering and panels
